@@ -6,6 +6,8 @@ publish = false
 
 [dev-dependencies]
 rstest = "0.26.1"
+tracing = "0.1.41"
+test-log = { version = "0.2", features = ["trace"] }
 
 [[test]]
 name = "test-dice"
