@@ -6,6 +6,31 @@ use embedded_graphics::{
 
 use num_traits::float::FloatCore;
 
+struct Face {
+    size: u32,
+    style: PrimitiveStyle<BinaryColor>,
+}
+
+impl Face {
+    fn new(size: u32) -> Self {
+        let style = PrimitiveStyle::with_stroke(BinaryColor::On, 1);
+        Self { size, style }
+    }
+
+    fn draw<T>(&self, target: &mut T) -> Result<(), T::Error>
+    where
+        T: DrawTarget<Color = BinaryColor>,
+    {
+        RoundedRectangle::new(
+            Rectangle::new(Point::new(0, 0), Size::new(self.size, self.size)),
+            CornerRadii::new(Size::new(16, 16)),
+        )
+        .translate(Point::new(0, 0))
+        .into_styled(self.style)
+        .draw(target)
+    }
+}
+
 struct Pip {
     size: u32,
     style: PrimitiveStyle<BinaryColor>,
@@ -17,7 +42,7 @@ impl Pip {
         Self { size, style }
     }
 
-    fn draw<T>(&self, target: &mut T, x: i32, y: i32) -> Result<(), <T as DrawTarget>::Error>
+    fn draw<T>(&self, target: &mut T, x: i32, y: i32) -> Result<(), T::Error>
     where
         T: DrawTarget<Color = BinaryColor>,
     {
@@ -31,8 +56,6 @@ pub fn draw_one<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
 where
     T: DrawTarget<Color = BinaryColor>,
 {
-    let stroke = PrimitiveStyle::with_stroke(BinaryColor::On, 1);
-
     let pip_size = percent_of_to_nearest_odd(side_length, 13);
     let pip = Pip::new(pip_size);
 
@@ -41,21 +64,14 @@ where
 
     pip.draw(target, pip_starts_at, pip_starts_at)?;
 
-    RoundedRectangle::new(
-        Rectangle::new(Point::new(0, 0), Size::new(side_length, side_length)),
-        CornerRadii::new(Size::new(16, 16)),
-    )
-    .translate(Point::new(0, 0))
-    .into_styled(stroke)
-    .draw(target)
+    let face = Face::new(side_length);
+    face.draw(target)
 }
 
 pub fn draw_two<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
 where
     T: DrawTarget<Color = BinaryColor>,
 {
-    let stroke = PrimitiveStyle::with_stroke(BinaryColor::On, 1);
-
     let pip_size = percent_of_to_nearest_odd(side_length, 13);
     let pip = Pip::new(pip_size);
 
@@ -69,13 +85,8 @@ where
 
     pip.draw(target, second_pip_starts_at, second_pip_starts_at)?;
 
-    RoundedRectangle::new(
-        Rectangle::new(Point::new(0, 0), Size::new(side_length, side_length)),
-        CornerRadii::new(Size::new(16, 16)),
-    )
-    .translate(Point::new(0, 0))
-    .into_styled(stroke)
-    .draw(target)
+    let face = Face::new(side_length);
+    face.draw(target)
 }
 
 fn percent_of_to_nearest_odd(numer: u32, percent: u32) -> u32 {
