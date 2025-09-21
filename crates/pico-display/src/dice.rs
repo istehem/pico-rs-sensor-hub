@@ -52,31 +52,44 @@ impl Pip {
     }
 }
 
+struct PipPoint {
+    pip_size: u32,
+    face_middle: u32,
+    face_middle_offset: u32,
+}
+
+impl PipPoint {
+    fn new(face_side_length: u32) -> Self {
+        let face_middle = (face_side_length - 1) / 2 + 1;
+        let face_middle_offset = (face_middle - 1) / 2;
+        let pip_size = pip_size(face_side_length);
+        Self {
+            pip_size,
+            face_middle,
+            face_middle_offset,
+        }
+    }
+
+    fn center_pip_point(&self) -> Point {
+        let pip_starts_at = (self.face_middle - (self.pip_size - 1) / 2) as i32;
+        Point::new(pip_starts_at, pip_starts_at)
+    }
+
+    fn upper_left_pip_point(&self) -> Point {
+        let pip_starts_at =
+            (self.face_middle - self.face_middle_offset - (self.pip_size - 1) / 2) as i32;
+        Point::new(pip_starts_at, pip_starts_at)
+    }
+
+    fn button_right_pip_point(&self) -> Point {
+        let pip_starts_at =
+            (self.face_middle + self.face_middle_offset - (self.pip_size - 1) / 2) as i32;
+        Point::new(pip_starts_at, pip_starts_at)
+    }
+}
+
 fn pip_size(side_length: u32) -> u32 {
     percent_of_to_nearest_odd(side_length, 13)
-}
-
-fn center_pip_point(side_length: u32, pip_size: u32) -> Point {
-    let middle = (side_length - 1) / 2 + 1;
-    let pip_starts_at = (middle - (pip_size - 1) / 2) as i32;
-
-    Point::new(pip_starts_at, pip_starts_at)
-}
-
-fn upper_left_pip_point(side_length: u32, pip_size: u32) -> Point {
-    let middle = (side_length - 1) / 2 + 1;
-    let middle_offset = (middle - 1) / 2;
-    let pip_starts_at = (middle - middle_offset - (pip_size - 1) / 2) as i32;
-
-    Point::new(pip_starts_at, pip_starts_at)
-}
-
-fn button_right_pip_point(side_length: u32, pip_size: u32) -> Point {
-    let middle = (side_length - 1) / 2 + 1;
-    let middle_offset = (middle - 1) / 2;
-    let pip_starts_at = (middle + middle_offset - (pip_size - 1) / 2) as i32;
-
-    Point::new(pip_starts_at, pip_starts_at)
 }
 
 pub fn draw_one<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
@@ -85,8 +98,9 @@ where
 {
     let pip_size = pip_size(side_length);
     let pip = Pip::new(pip_size);
+    let pip_point = PipPoint::new(side_length);
 
-    pip.draw(target, center_pip_point(side_length, pip_size))?;
+    pip.draw(target, pip_point.center_pip_point())?;
 
     let face = Face::new(side_length);
     face.draw(target)
@@ -98,9 +112,10 @@ where
 {
     let pip_size = pip_size(side_length);
     let pip = Pip::new(pip_size);
+    let pip_point = PipPoint::new(side_length);
 
-    pip.draw(target, upper_left_pip_point(side_length, pip_size))?;
-    pip.draw(target, button_right_pip_point(side_length, pip_size))?;
+    pip.draw(target, pip_point.upper_left_pip_point())?;
+    pip.draw(target, pip_point.button_right_pip_point())?;
 
     let face = Face::new(side_length);
     face.draw(target)
@@ -112,10 +127,11 @@ where
 {
     let pip_size = pip_size(side_length);
     let pip = Pip::new(pip_size);
+    let pip_point = PipPoint::new(side_length);
 
-    pip.draw(target, center_pip_point(side_length, pip_size))?;
-    pip.draw(target, upper_left_pip_point(side_length, pip_size))?;
-    pip.draw(target, button_right_pip_point(side_length, pip_size))?;
+    pip.draw(target, pip_point.center_pip_point())?;
+    pip.draw(target, pip_point.upper_left_pip_point())?;
+    pip.draw(target, pip_point.button_right_pip_point())?;
 
     let face = Face::new(side_length);
     face.draw(target)
