@@ -88,6 +88,20 @@ impl Pip {
     {
         self.draw(target, self.point.upper_right_pip_point())
     }
+
+    fn draw_center_left_pip<T>(&self, target: &mut T) -> Result<(), T::Error>
+    where
+        T: DrawTarget<Color = BinaryColor>,
+    {
+        self.draw(target, self.point.center_left_pip_point())
+    }
+
+    fn draw_center_right_pip<T>(&self, target: &mut T) -> Result<(), T::Error>
+    where
+        T: DrawTarget<Color = BinaryColor>,
+    {
+        self.draw(target, self.point.center_right_pip_point())
+    }
 }
 
 struct PipPoint {
@@ -137,6 +151,20 @@ impl PipPoint {
             (self.face_middle + self.face_middle_offset - (self.pip_size - 1) / 2) as i32;
         let pip_starts_at_y =
             (self.face_middle - self.face_middle_offset - (self.pip_size - 1) / 2) as i32;
+        Point::new(pip_starts_at_x, pip_starts_at_y)
+    }
+
+    fn center_left_pip_point(&self) -> Point {
+        let pip_starts_at_x =
+            (self.face_middle - self.face_middle_offset - (self.pip_size - 1) / 2) as i32;
+        let pip_starts_at_y = (self.face_middle - (self.pip_size - 1) / 2) as i32;
+        Point::new(pip_starts_at_x, pip_starts_at_y)
+    }
+
+    fn center_right_pip_point(&self) -> Point {
+        let pip_starts_at_x =
+            (self.face_middle + self.face_middle_offset - (self.pip_size - 1) / 2) as i32;
+        let pip_starts_at_y = (self.face_middle - (self.pip_size - 1) / 2) as i32;
         Point::new(pip_starts_at_x, pip_starts_at_y)
     }
 }
@@ -206,6 +234,23 @@ where
     pip.draw_upper_right_pip(target)?;
     pip.draw_bottom_right_pip(target)?;
     pip.draw_bottom_left_pip(target)?;
+
+    let face = Face::new(side_length);
+    face.draw(target)
+}
+
+pub fn draw_six<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
+where
+    T: DrawTarget<Color = BinaryColor>,
+{
+    let pip = Pip::new(side_length);
+
+    pip.draw_upper_left_pip(target)?;
+    pip.draw_upper_right_pip(target)?;
+    pip.draw_bottom_right_pip(target)?;
+    pip.draw_bottom_left_pip(target)?;
+    pip.draw_center_left_pip(target)?;
+    pip.draw_center_right_pip(target)?;
 
     let face = Face::new(side_length);
     face.draw(target)

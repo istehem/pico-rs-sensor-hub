@@ -97,4 +97,17 @@ mod tests {
 
         draw_in_window(&display)
     }
+
+    #[rstest]
+    #[test_log::test]
+    fn test_draw_dice_six(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
+        let _guard = TEST_MUTEX.lock().unwrap();
+
+        dice::draw_six(
+            &mut display.translated(Point::new(PADDING, PADDING)),
+            FACE_SIDE_LENGTH,
+        )?;
+
+        draw_in_window(&display)
+    }
 }
