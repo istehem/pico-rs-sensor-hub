@@ -14,17 +14,16 @@ mod tests {
         static ref TEST_MUTEX: Mutex<()> = Mutex::new(());
     }
 
+    const PADDING: i32 = 8;
+    const SCREEN_WIDTH: u32 = 255;
+    const SCREEN_HEIGHT: u32 = SCREEN_WIDTH;
+    const FACE_SIDE_LENGTH: u32 = SCREEN_WIDTH - 2 * PADDING as u32;
+
     type Display = SimulatorDisplay<Rgb888>;
 
     #[fixture]
-    #[once]
-    fn shared_display() -> Display {
-        SimulatorDisplay::new(Size::new(255, 255))
-    }
-
-    #[fixture]
-    fn shared_display_clone(#[from(shared_display)] display: &Display) -> Display {
-        display.clone()
+    fn init_display() -> Display {
+        SimulatorDisplay::new(Size::new(SCREEN_WIDTH, SCREEN_HEIGHT))
     }
 
     fn draw_in_window(display: &Display) -> Result<(), Infallible> {
@@ -36,24 +35,26 @@ mod tests {
 
     #[rstest]
     #[test_log::test]
-    fn test_draw_dice_one(
-        #[from(shared_display_clone)] mut display: Display,
-    ) -> Result<(), Infallible> {
+    fn test_draw_dice_one(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
 
-        dice::draw_one(&mut display.translated(Point::new(8, 8)), 255 - 8 - 8)?;
+        dice::draw_one(
+            &mut display.translated(Point::new(PADDING, PADDING)),
+            FACE_SIDE_LENGTH,
+        )?;
 
         draw_in_window(&display)
     }
 
     #[rstest]
     #[test_log::test]
-    fn test_draw_dice_two(
-        #[from(shared_display_clone)] mut display: Display,
-    ) -> Result<(), Infallible> {
+    fn test_draw_dice_two(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
 
-        dice::draw_two(&mut display.translated(Point::new(8, 8)), 255 - 8 - 8)?;
+        dice::draw_two(
+            &mut display.translated(Point::new(PADDING, PADDING)),
+            FACE_SIDE_LENGTH,
+        )?;
 
         draw_in_window(&display)
     }
