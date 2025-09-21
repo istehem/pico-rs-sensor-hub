@@ -59,7 +59,7 @@ where
     let pip_size = percent_of_to_nearest_odd(side_length, 13);
     let pip = Pip::new(pip_size);
 
-    let middle = (side_length - 1) / 2;
+    let middle = (side_length - 1) / 2 + 1;
     let pip_starts_at = (middle - (pip_size - 1) / 2) as i32;
 
     pip.draw(target, pip_starts_at, pip_starts_at)?;
@@ -75,7 +75,7 @@ where
     let pip_size = percent_of_to_nearest_odd(side_length, 13);
     let pip = Pip::new(pip_size);
 
-    let middle = (side_length - 1) / 2;
+    let middle = (side_length - 1) / 2 + 1;
     let middle_offset = (middle - 1) / 2;
     let first_pip_starts_at = (middle - middle_offset - (pip_size - 1) / 2) as i32;
 
