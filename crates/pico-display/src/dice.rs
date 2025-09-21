@@ -89,6 +89,31 @@ where
     face.draw(target)
 }
 
+pub fn draw_three<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
+where
+    T: DrawTarget<Color = BinaryColor>,
+{
+    let pip_size = percent_of_to_nearest_odd(side_length, 13);
+    let pip = Pip::new(pip_size);
+
+    let middle = (side_length - 1) / 2 + 1;
+    let first_pip_starts_at = (middle - (pip_size - 1) / 2) as i32;
+
+    pip.draw(target, first_pip_starts_at, first_pip_starts_at)?;
+
+    let middle_offset = (middle - 1) / 2;
+    let second_pip_starts_at = (middle - middle_offset - (pip_size - 1) / 2) as i32;
+
+    pip.draw(target, second_pip_starts_at, second_pip_starts_at)?;
+
+    let third_pip_starts_at = (middle + middle_offset - (pip_size - 1) / 2) as i32;
+
+    pip.draw(target, third_pip_starts_at, third_pip_starts_at)?;
+
+    let face = Face::new(side_length);
+    face.draw(target)
+}
+
 fn percent_of_to_nearest_odd(numer: u32, percent: u32) -> u32 {
     let result = (numer as f64) * (percent as f64) / 100.0;
     let rounded = result.round() as u32;
