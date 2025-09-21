@@ -42,27 +42,51 @@ impl Pip {
         Self { size, style }
     }
 
-    fn draw<T>(&self, target: &mut T, x: i32, y: i32) -> Result<(), T::Error>
+    fn draw<T>(&self, target: &mut T, point: Point) -> Result<(), T::Error>
     where
         T: DrawTarget<Color = BinaryColor>,
     {
-        Circle::new(Point::new(x, y), self.size)
+        Circle::new(point, self.size)
             .into_styled(self.style)
             .draw(target)
     }
+}
+
+fn pip_size(side_length: u32) -> u32 {
+    percent_of_to_nearest_odd(side_length, 13)
+}
+
+fn center_pip_point(side_length: u32, pip_size: u32) -> Point {
+    let middle = (side_length - 1) / 2 + 1;
+    let pip_starts_at = (middle - (pip_size - 1) / 2) as i32;
+
+    Point::new(pip_starts_at, pip_starts_at)
+}
+
+fn upper_left_pip_point(side_length: u32, pip_size: u32) -> Point {
+    let middle = (side_length - 1) / 2 + 1;
+    let middle_offset = (middle - 1) / 2;
+    let pip_starts_at = (middle - middle_offset - (pip_size - 1) / 2) as i32;
+
+    Point::new(pip_starts_at, pip_starts_at)
+}
+
+fn button_right_pip_point(side_length: u32, pip_size: u32) -> Point {
+    let middle = (side_length - 1) / 2 + 1;
+    let middle_offset = (middle - 1) / 2;
+    let pip_starts_at = (middle + middle_offset - (pip_size - 1) / 2) as i32;
+
+    Point::new(pip_starts_at, pip_starts_at)
 }
 
 pub fn draw_one<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
 where
     T: DrawTarget<Color = BinaryColor>,
 {
-    let pip_size = percent_of_to_nearest_odd(side_length, 13);
+    let pip_size = pip_size(side_length);
     let pip = Pip::new(pip_size);
 
-    let middle = (side_length - 1) / 2 + 1;
-    let pip_starts_at = (middle - (pip_size - 1) / 2) as i32;
-
-    pip.draw(target, pip_starts_at, pip_starts_at)?;
+    pip.draw(target, center_pip_point(side_length, pip_size))?;
 
     let face = Face::new(side_length);
     face.draw(target)
@@ -72,18 +96,11 @@ pub fn draw_two<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
 where
     T: DrawTarget<Color = BinaryColor>,
 {
-    let pip_size = percent_of_to_nearest_odd(side_length, 13);
+    let pip_size = pip_size(side_length);
     let pip = Pip::new(pip_size);
 
-    let middle = (side_length - 1) / 2 + 1;
-    let middle_offset = (middle - 1) / 2;
-    let first_pip_starts_at = (middle - middle_offset - (pip_size - 1) / 2) as i32;
-
-    pip.draw(target, first_pip_starts_at, first_pip_starts_at)?;
-
-    let second_pip_starts_at = (middle + middle_offset - (pip_size - 1) / 2) as i32;
-
-    pip.draw(target, second_pip_starts_at, second_pip_starts_at)?;
+    pip.draw(target, upper_left_pip_point(side_length, pip_size))?;
+    pip.draw(target, button_right_pip_point(side_length, pip_size))?;
 
     let face = Face::new(side_length);
     face.draw(target)
@@ -93,22 +110,12 @@ pub fn draw_three<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
 where
     T: DrawTarget<Color = BinaryColor>,
 {
-    let pip_size = percent_of_to_nearest_odd(side_length, 13);
+    let pip_size = pip_size(side_length);
     let pip = Pip::new(pip_size);
 
-    let middle = (side_length - 1) / 2 + 1;
-    let first_pip_starts_at = (middle - (pip_size - 1) / 2) as i32;
-
-    pip.draw(target, first_pip_starts_at, first_pip_starts_at)?;
-
-    let middle_offset = (middle - 1) / 2;
-    let second_pip_starts_at = (middle - middle_offset - (pip_size - 1) / 2) as i32;
-
-    pip.draw(target, second_pip_starts_at, second_pip_starts_at)?;
-
-    let third_pip_starts_at = (middle + middle_offset - (pip_size - 1) / 2) as i32;
-
-    pip.draw(target, third_pip_starts_at, third_pip_starts_at)?;
+    pip.draw(target, center_pip_point(side_length, pip_size))?;
+    pip.draw(target, upper_left_pip_point(side_length, pip_size))?;
+    pip.draw(target, button_right_pip_point(side_length, pip_size))?;
 
     let face = Face::new(side_length);
     face.draw(target)
