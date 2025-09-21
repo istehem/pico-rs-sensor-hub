@@ -39,8 +39,8 @@ struct Pip {
 
 impl Pip {
     fn new(face_side_length: u32) -> Self {
-        let size = pip_size(face_side_length);
-        let point = PipPoint::new(face_side_length);
+        let size = percent_of_to_nearest_odd(face_side_length, 13);
+        let point = PipPoint::new(face_side_length, size);
         let style = PrimitiveStyle::with_fill(BinaryColor::On);
         Self { size, style, point }
     }
@@ -83,10 +83,9 @@ struct PipPoint {
 }
 
 impl PipPoint {
-    fn new(face_side_length: u32) -> Self {
+    fn new(face_side_length: u32, pip_size: u32) -> Self {
         let face_middle = (face_side_length - 1) / 2 + 1;
         let face_middle_offset = (face_middle - 1) / 2;
-        let pip_size = pip_size(face_side_length);
         Self {
             pip_size,
             face_middle,
@@ -110,10 +109,6 @@ impl PipPoint {
             (self.face_middle + self.face_middle_offset - (self.pip_size - 1) / 2) as i32;
         Point::new(pip_starts_at, pip_starts_at)
     }
-}
-
-fn pip_size(side_length: u32) -> u32 {
-    percent_of_to_nearest_odd(side_length, 13)
 }
 
 pub fn draw_one<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
