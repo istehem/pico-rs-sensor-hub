@@ -34,12 +34,15 @@ impl Face {
 struct Pip {
     size: u32,
     style: PrimitiveStyle<BinaryColor>,
+    point: PipPoint,
 }
 
 impl Pip {
-    fn new(size: u32) -> Self {
+    fn new(face_side_length: u32) -> Self {
+        let size = pip_size(face_side_length);
+        let point = PipPoint::new(face_side_length);
         let style = PrimitiveStyle::with_fill(BinaryColor::On);
-        Self { size, style }
+        Self { size, style, point }
     }
 
     fn draw<T>(&self, target: &mut T, point: Point) -> Result<(), T::Error>
@@ -49,6 +52,27 @@ impl Pip {
         Circle::new(point, self.size)
             .into_styled(self.style)
             .draw(target)
+    }
+
+    fn draw_center_pip<T>(&self, target: &mut T) -> Result<(), T::Error>
+    where
+        T: DrawTarget<Color = BinaryColor>,
+    {
+        self.draw(target, self.point.center_pip_point())
+    }
+
+    fn draw_upper_left_pip<T>(&self, target: &mut T) -> Result<(), T::Error>
+    where
+        T: DrawTarget<Color = BinaryColor>,
+    {
+        self.draw(target, self.point.upper_left_pip_point())
+    }
+
+    fn draw_buttom_right_pip<T>(&self, target: &mut T) -> Result<(), T::Error>
+    where
+        T: DrawTarget<Color = BinaryColor>,
+    {
+        self.draw(target, self.point.button_right_pip_point())
     }
 }
 
@@ -96,11 +120,9 @@ pub fn draw_one<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
 where
     T: DrawTarget<Color = BinaryColor>,
 {
-    let pip_size = pip_size(side_length);
-    let pip = Pip::new(pip_size);
-    let pip_point = PipPoint::new(side_length);
+    let pip = Pip::new(side_length);
 
-    pip.draw(target, pip_point.center_pip_point())?;
+    pip.draw_center_pip(target)?;
 
     let face = Face::new(side_length);
     face.draw(target)
@@ -110,12 +132,10 @@ pub fn draw_two<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
 where
     T: DrawTarget<Color = BinaryColor>,
 {
-    let pip_size = pip_size(side_length);
-    let pip = Pip::new(pip_size);
-    let pip_point = PipPoint::new(side_length);
+    let pip = Pip::new(side_length);
 
-    pip.draw(target, pip_point.upper_left_pip_point())?;
-    pip.draw(target, pip_point.button_right_pip_point())?;
+    pip.draw_upper_left_pip(target)?;
+    pip.draw_buttom_right_pip(target)?;
 
     let face = Face::new(side_length);
     face.draw(target)
@@ -125,13 +145,11 @@ pub fn draw_three<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
 where
     T: DrawTarget<Color = BinaryColor>,
 {
-    let pip_size = pip_size(side_length);
-    let pip = Pip::new(pip_size);
-    let pip_point = PipPoint::new(side_length);
+    let pip = Pip::new(side_length);
 
-    pip.draw(target, pip_point.center_pip_point())?;
-    pip.draw(target, pip_point.upper_left_pip_point())?;
-    pip.draw(target, pip_point.button_right_pip_point())?;
+    pip.draw_center_pip(target)?;
+    pip.draw_upper_left_pip(target)?;
+    pip.draw_buttom_right_pip(target)?;
 
     let face = Face::new(side_length);
     face.draw(target)
