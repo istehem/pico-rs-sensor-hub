@@ -195,6 +195,22 @@ where
     face.draw(target)
 }
 
+pub fn draw_five<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
+where
+    T: DrawTarget<Color = BinaryColor>,
+{
+    let pip = Pip::new(side_length);
+
+    pip.draw_center_pip(target)?;
+    pip.draw_upper_left_pip(target)?;
+    pip.draw_upper_right_pip(target)?;
+    pip.draw_bottom_right_pip(target)?;
+    pip.draw_bottom_left_pip(target)?;
+
+    let face = Face::new(side_length);
+    face.draw(target)
+}
+
 fn percent_of_to_nearest_odd(numer: u32, percent: u32) -> u32 {
     let result = (numer as f64) * (percent as f64) / 100.0;
     let rounded = result.round() as u32;
