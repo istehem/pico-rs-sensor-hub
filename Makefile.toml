@@ -1,3 +1,11 @@
+[tasks.outdated]
+workspace = false
+command = "cargo"
+args = [
+	"upgrade", "--locked", "-p", "--dry-run"
+]
+
+
 [tasks.test]
 workspace = false
 command = "cargo"

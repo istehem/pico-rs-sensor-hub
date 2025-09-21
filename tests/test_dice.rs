@@ -14,21 +14,20 @@ mod tests {
         info!("Hello World!");
     }
 
-    /*
     #[rstest]
     #[test_log::test]
     fn test_draw_dice_one() -> Result<(), Infallible> {
         let mut display: SimulatorDisplay<Rgb888> = SimulatorDisplay::new(Size::new(255, 255));
 
-        dice::draw_one(&mut display.translated(Point::new(8, 8)))?;
+        dice::draw_one(&mut display.translated(Point::new(8, 8)), 255 - 8 - 8)?;
 
         let output_settings = OutputSettingsBuilder::new().scale(1).build();
         Window::new("a die", &output_settings).show_static(&display);
 
         Ok(())
     }
-    */
 
+    /*
     #[rstest]
     #[test_log::test]
     fn test_draw_dice_two() -> Result<(), Infallible> {
@@ -41,4 +40,5 @@ mod tests {
 
         Ok(())
     }
+    */
 }
