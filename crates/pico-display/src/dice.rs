@@ -105,67 +105,58 @@ impl Pip {
 }
 
 struct PipPoint {
-    pip_size: u32,
-    face_middle: u32,
-    face_middle_offset: u32,
+    starts_at_center: i32,
+    starts_at_upper_or_left: i32,
+    starts_at_bottom_or_right: i32,
 }
 
 impl PipPoint {
     fn new(face_side_length: u32, pip_size: u32) -> Self {
         let face_middle = (face_side_length - 1) / 2 + 1;
         let face_middle_offset = (face_middle - 1) / 2;
+
+        let starts_at_center = (face_middle - (pip_size - 1) / 2) as i32;
+        let starts_at_upper_or_left =
+            (face_middle - face_middle_offset - (pip_size - 1) / 2) as i32;
+        let starts_at_bottom_or_right =
+            (face_middle + face_middle_offset - (pip_size - 1) / 2) as i32;
+
         Self {
-            pip_size,
-            face_middle,
-            face_middle_offset,
+            starts_at_center,
+            starts_at_upper_or_left,
+            starts_at_bottom_or_right,
         }
     }
 
     fn center_pip_point(&self) -> Point {
-        let pip_starts_at = (self.face_middle - (self.pip_size - 1) / 2) as i32;
-        Point::new(pip_starts_at, pip_starts_at)
+        Point::new(self.starts_at_center, self.starts_at_center)
     }
 
     fn upper_left_pip_point(&self) -> Point {
-        let pip_starts_at =
-            (self.face_middle - self.face_middle_offset - (self.pip_size - 1) / 2) as i32;
-        Point::new(pip_starts_at, pip_starts_at)
+        Point::new(self.starts_at_upper_or_left, self.starts_at_upper_or_left)
     }
 
     fn bottom_right_pip_point(&self) -> Point {
-        let pip_starts_at =
-            (self.face_middle + self.face_middle_offset - (self.pip_size - 1) / 2) as i32;
-        Point::new(pip_starts_at, pip_starts_at)
+        Point::new(
+            self.starts_at_bottom_or_right,
+            self.starts_at_bottom_or_right,
+        )
     }
 
     fn bottom_left_pip_point(&self) -> Point {
-        let pip_starts_at_x =
-            (self.face_middle - self.face_middle_offset - (self.pip_size - 1) / 2) as i32;
-        let pip_starts_at_y =
-            (self.face_middle + self.face_middle_offset - (self.pip_size - 1) / 2) as i32;
-        Point::new(pip_starts_at_x, pip_starts_at_y)
+        Point::new(self.starts_at_upper_or_left, self.starts_at_bottom_or_right)
     }
 
     fn upper_right_pip_point(&self) -> Point {
-        let pip_starts_at_x =
-            (self.face_middle + self.face_middle_offset - (self.pip_size - 1) / 2) as i32;
-        let pip_starts_at_y =
-            (self.face_middle - self.face_middle_offset - (self.pip_size - 1) / 2) as i32;
-        Point::new(pip_starts_at_x, pip_starts_at_y)
+        Point::new(self.starts_at_bottom_or_right, self.starts_at_upper_or_left)
     }
 
     fn center_left_pip_point(&self) -> Point {
-        let pip_starts_at_x =
-            (self.face_middle - self.face_middle_offset - (self.pip_size - 1) / 2) as i32;
-        let pip_starts_at_y = (self.face_middle - (self.pip_size - 1) / 2) as i32;
-        Point::new(pip_starts_at_x, pip_starts_at_y)
+        Point::new(self.starts_at_upper_or_left, self.starts_at_center)
     }
 
     fn center_right_pip_point(&self) -> Point {
-        let pip_starts_at_x =
-            (self.face_middle + self.face_middle_offset - (self.pip_size - 1) / 2) as i32;
-        let pip_starts_at_y = (self.face_middle - (self.pip_size - 1) / 2) as i32;
-        Point::new(pip_starts_at_x, pip_starts_at_y)
+        Point::new(self.starts_at_bottom_or_right, self.starts_at_center)
     }
 }
 
