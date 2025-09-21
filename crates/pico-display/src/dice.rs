@@ -68,11 +68,25 @@ impl Pip {
         self.draw(target, self.point.upper_left_pip_point())
     }
 
-    fn draw_buttom_right_pip<T>(&self, target: &mut T) -> Result<(), T::Error>
+    fn draw_bottom_right_pip<T>(&self, target: &mut T) -> Result<(), T::Error>
     where
         T: DrawTarget<Color = BinaryColor>,
     {
-        self.draw(target, self.point.button_right_pip_point())
+        self.draw(target, self.point.bottom_right_pip_point())
+    }
+
+    fn draw_bottom_left_pip<T>(&self, target: &mut T) -> Result<(), T::Error>
+    where
+        T: DrawTarget<Color = BinaryColor>,
+    {
+        self.draw(target, self.point.bottom_left_pip_point())
+    }
+
+    fn draw_upper_right_pip<T>(&self, target: &mut T) -> Result<(), T::Error>
+    where
+        T: DrawTarget<Color = BinaryColor>,
+    {
+        self.draw(target, self.point.upper_right_pip_point())
     }
 }
 
@@ -104,10 +118,26 @@ impl PipPoint {
         Point::new(pip_starts_at, pip_starts_at)
     }
 
-    fn button_right_pip_point(&self) -> Point {
+    fn bottom_right_pip_point(&self) -> Point {
         let pip_starts_at =
             (self.face_middle + self.face_middle_offset - (self.pip_size - 1) / 2) as i32;
         Point::new(pip_starts_at, pip_starts_at)
+    }
+
+    fn bottom_left_pip_point(&self) -> Point {
+        let pip_starts_at_x =
+            (self.face_middle - self.face_middle_offset - (self.pip_size - 1) / 2) as i32;
+        let pip_starts_at_y =
+            (self.face_middle + self.face_middle_offset - (self.pip_size - 1) / 2) as i32;
+        Point::new(pip_starts_at_x, pip_starts_at_y)
+    }
+
+    fn upper_right_pip_point(&self) -> Point {
+        let pip_starts_at_x =
+            (self.face_middle + self.face_middle_offset - (self.pip_size - 1) / 2) as i32;
+        let pip_starts_at_y =
+            (self.face_middle - self.face_middle_offset - (self.pip_size - 1) / 2) as i32;
+        Point::new(pip_starts_at_x, pip_starts_at_y)
     }
 }
 
@@ -130,7 +160,7 @@ where
     let pip = Pip::new(side_length);
 
     pip.draw_upper_left_pip(target)?;
-    pip.draw_buttom_right_pip(target)?;
+    pip.draw_bottom_right_pip(target)?;
 
     let face = Face::new(side_length);
     face.draw(target)
@@ -144,7 +174,22 @@ where
 
     pip.draw_center_pip(target)?;
     pip.draw_upper_left_pip(target)?;
-    pip.draw_buttom_right_pip(target)?;
+    pip.draw_bottom_right_pip(target)?;
+
+    let face = Face::new(side_length);
+    face.draw(target)
+}
+
+pub fn draw_four<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
+where
+    T: DrawTarget<Color = BinaryColor>,
+{
+    let pip = Pip::new(side_length);
+
+    pip.draw_upper_left_pip(target)?;
+    pip.draw_upper_right_pip(target)?;
+    pip.draw_bottom_right_pip(target)?;
+    pip.draw_bottom_left_pip(target)?;
 
     let face = Face::new(side_length);
     face.draw(target)
