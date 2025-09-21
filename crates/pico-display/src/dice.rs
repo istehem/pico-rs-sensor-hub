@@ -1,5 +1,5 @@
 use embedded_graphics::{
-    pixelcolor::Rgb888,
+    pixelcolor::BinaryColor,
     prelude::*,
     primitives::{Circle, CornerRadii, PrimitiveStyle, Rectangle, RoundedRectangle},
 };
@@ -8,10 +8,10 @@ use num_traits::float::FloatCore;
 
 pub fn draw_one<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
 where
-    T: DrawTarget<Color = Rgb888>,
+    T: DrawTarget<Color = BinaryColor>,
 {
-    let stroke = PrimitiveStyle::with_stroke(Rgb888::WHITE, 1);
-    let stroke_off_fill_on = PrimitiveStyle::with_fill(Rgb888::WHITE);
+    let stroke = PrimitiveStyle::with_stroke(BinaryColor::On, 1);
+    let stroke_off_fill_on = PrimitiveStyle::with_fill(BinaryColor::On);
 
     let middle = (side_length - 1) / 2;
     let pip_size = percent_of_to_nearest_odd(side_length, 13);
@@ -33,10 +33,10 @@ where
 
 pub fn draw_two<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
 where
-    T: DrawTarget<Color = Rgb888>,
+    T: DrawTarget<Color = BinaryColor>,
 {
-    let stroke = PrimitiveStyle::with_stroke(Rgb888::WHITE, 1);
-    let stroke_off_fill_on = PrimitiveStyle::with_fill(Rgb888::WHITE);
+    let stroke = PrimitiveStyle::with_stroke(BinaryColor::On, 1);
+    let stroke_off_fill_on = PrimitiveStyle::with_fill(BinaryColor::On);
 
     let middle = (side_length - 1) / 2;
     let pip_size = percent_of_to_nearest_odd(side_length, 13);

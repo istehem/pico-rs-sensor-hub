@@ -4,7 +4,7 @@ mod tests {
     use rstest::rstest;
 
     use core::convert::Infallible;
-    use embedded_graphics::{pixelcolor::Rgb888, prelude::*};
+    use embedded_graphics::{pixelcolor::BinaryColor, prelude::*};
     use embedded_graphics_simulator::{OutputSettingsBuilder, SimulatorDisplay, Window};
     use lazy_static::lazy_static;
     use pico_display::dice;
@@ -19,7 +19,7 @@ mod tests {
     const SCREEN_HEIGHT: u32 = SCREEN_WIDTH;
     const FACE_SIDE_LENGTH: u32 = SCREEN_WIDTH - 2 * PADDING as u32;
 
-    type Display = SimulatorDisplay<Rgb888>;
+    type Display = SimulatorDisplay<BinaryColor>;
 
     #[fixture]
     fn init_display() -> Display {
