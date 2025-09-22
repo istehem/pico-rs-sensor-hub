@@ -7,7 +7,7 @@ mod tests {
     use embedded_graphics::{pixelcolor::BinaryColor, prelude::*};
     use embedded_graphics_simulator::{OutputSettingsBuilder, SimulatorDisplay, Window};
     use lazy_static::lazy_static;
-    use pico_display::dice;
+    use pico_display::die;
     use std::sync::Mutex;
 
     lazy_static! {
@@ -35,10 +35,10 @@ mod tests {
 
     #[rstest]
     #[test_log::test]
-    fn test_draw_dice_one(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
+    fn test_draw_face_one(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
 
-        dice::draw_one(
+        die::draw_one(
             &mut display.translated(Point::new(PADDING, PADDING)),
             FACE_SIDE_LENGTH,
         )?;
@@ -48,10 +48,10 @@ mod tests {
 
     #[rstest]
     #[test_log::test]
-    fn test_draw_dice_two(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
+    fn test_draw_face_two(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
 
-        dice::draw_two(
+        die::draw_two(
             &mut display.translated(Point::new(PADDING, PADDING)),
             FACE_SIDE_LENGTH,
         )?;
@@ -61,10 +61,10 @@ mod tests {
 
     #[rstest]
     #[test_log::test]
-    fn test_draw_dice_three(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
+    fn test_draw_face_three(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
 
-        dice::draw_three(
+        die::draw_three(
             &mut display.translated(Point::new(PADDING, PADDING)),
             FACE_SIDE_LENGTH,
         )?;
@@ -74,10 +74,10 @@ mod tests {
 
     #[rstest]
     #[test_log::test]
-    fn test_draw_dice_four(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
+    fn test_draw_face_four(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
 
-        dice::draw_four(
+        die::draw_four(
             &mut display.translated(Point::new(PADDING, PADDING)),
             FACE_SIDE_LENGTH,
         )?;
@@ -87,10 +87,10 @@ mod tests {
 
     #[rstest]
     #[test_log::test]
-    fn test_draw_dice_five(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
+    fn test_draw_face_five(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
 
-        dice::draw_five(
+        die::draw_five(
             &mut display.translated(Point::new(PADDING, PADDING)),
             FACE_SIDE_LENGTH,
         )?;
@@ -100,10 +100,10 @@ mod tests {
 
     #[rstest]
     #[test_log::test]
-    fn test_draw_dice_six(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
+    fn test_draw_face_six(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
 
-        dice::draw_six(
+        die::draw_six(
             &mut display.translated(Point::new(PADDING, PADDING)),
             FACE_SIDE_LENGTH,
         )?;
