@@ -5,10 +5,16 @@ args = [
 	"upgrade", "--locked", "-p", "--dry-run"
 ]
 
-
 [tasks.test]
 workspace = false
 command = "cargo"
 args = [
 	"test", "--target=x86_64-unknown-linux-gnu", "-p", "tests", "--", "--nocapture"
+]
+
+[tasks.test-player]
+workspace = false
+command = "cargo"
+args = [
+	"test", "--target=x86_64-unknown-linux-gnu", "-p", "tests", "--test", "test-player", "--", "--nocapture"
 ]

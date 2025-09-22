@@ -11,9 +11,14 @@ tracing = "0.1.41"
 test-log = { version = "0.2", features = ["trace"] }
 embedded-graphics = "0.7.0"
 embedded-graphics-simulator = "0.3.0"
+rand = "0.9.2"
 pico-display = { path = "../crates/pico-display" }
 
-[[test]]
-name = "test-dice"
-path = "test_dice.rs"
 
+[[test]]
+name = "test-die"
+path = "test_die.rs"
+
+[[test]]
+name = "test-player"
+path = "test_player.rs"
