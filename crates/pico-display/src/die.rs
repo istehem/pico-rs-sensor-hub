@@ -163,7 +163,7 @@ impl PipPoint {
     }
 }
 
-pub fn draw_one<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
+fn draw_one<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
 where
     T: DrawTarget<Color = BinaryColor>,
 {
@@ -175,7 +175,7 @@ where
     face.draw(target)
 }
 
-pub fn draw_two<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
+fn draw_two<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
 where
     T: DrawTarget<Color = BinaryColor>,
 {
@@ -188,7 +188,7 @@ where
     face.draw(target)
 }
 
-pub fn draw_three<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
+fn draw_three<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
 where
     T: DrawTarget<Color = BinaryColor>,
 {
@@ -202,7 +202,7 @@ where
     face.draw(target)
 }
 
-pub fn draw_four<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
+fn draw_four<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
 where
     T: DrawTarget<Color = BinaryColor>,
 {
@@ -217,7 +217,7 @@ where
     face.draw(target)
 }
 
-pub fn draw_five<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
+fn draw_five<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
 where
     T: DrawTarget<Color = BinaryColor>,
 {
@@ -233,7 +233,7 @@ where
     face.draw(target)
 }
 
-pub fn draw_six<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
+fn draw_six<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
 where
     T: DrawTarget<Color = BinaryColor>,
 {
