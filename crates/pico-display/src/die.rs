@@ -5,9 +5,12 @@ use embedded_graphics::{
 };
 
 use core::cmp::Ordering;
-use num_traits::float::FloatCore;
 use rand::distributions::{Distribution, Standard};
 use rand::Rng;
+
+use crate::utils;
+
+const PADDING_IN_PERCENT: u32 = 3;
 
 struct Face {
     size: u32,
@@ -42,7 +45,7 @@ struct Pip {
 
 impl Pip {
     fn new(face_side_length: u32) -> Self {
-        let size = percent_of_to_nearest_odd(face_side_length, 13);
+        let size = utils::percent_of_to_nearest_odd(face_side_length, 13);
         let point = PipPoint::new(face_side_length, size);
         let style = PrimitiveStyle::with_fill(BinaryColor::On);
         Self { size, style, point }
@@ -250,26 +253,6 @@ where
     face.draw(target)
 }
 
-fn percent_of_to_nearest_odd(numer: u32, percent: u32) -> u32 {
-    let result = (numer as f64) * (percent as f64) / 100.0;
-    let rounded = result.round() as u32;
-
-    if rounded % 2 == 1 {
-        rounded
-    } else if rounded == 0 {
-        1
-    } else {
-        let dist_down = (result - (rounded - 1) as f64).abs();
-        let dist_up = (result - (rounded + 1) as f64).abs();
-
-        if dist_down <= dist_up {
-            rounded - 1
-        } else {
-            rounded + 1
-        }
-    }
-}
-
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub enum FaceValue {
     One,
@@ -282,26 +265,34 @@ pub enum FaceValue {
 
 #[derive(Eq)]
 pub struct Die {
-    side_length: u32,
+    target_side_length: u32,
     value: FaceValue,
 }
 
 impl Die {
-    pub fn new(value: FaceValue, side_length: u32) -> Self {
-        Self { value, side_length }
+    pub fn new(value: FaceValue, target_side_length: u32) -> Self {
+        Self {
+            value,
+            target_side_length,
+        }
     }
 
     pub fn draw<T>(&mut self, target: &mut T) -> Result<(), T::Error>
     where
         T: DrawTarget<Color = BinaryColor>,
     {
+        let padding = utils::percent_of(self.target_side_length, PADDING_IN_PERCENT);
+
+        let mut padded_target = target.translated(Point::new(padding as i32, padding as i32));
+        let face_side_length = self.target_side_length - 2 * padding;
+
         match &self.value {
-            FaceValue::One => draw_one(target, self.side_length),
-            FaceValue::Two => draw_two(target, self.side_length),
-            FaceValue::Three => draw_three(target, self.side_length),
-            FaceValue::Four => draw_four(target, self.side_length),
-            FaceValue::Five => draw_five(target, self.side_length),
-            FaceValue::Six => draw_six(target, self.side_length),
+            FaceValue::One => draw_one(&mut padded_target, face_side_length),
+            FaceValue::Two => draw_two(&mut padded_target, face_side_length),
+            FaceValue::Three => draw_three(&mut padded_target, face_side_length),
+            FaceValue::Four => draw_four(&mut padded_target, face_side_length),
+            FaceValue::Five => draw_five(&mut padded_target, face_side_length),
+            FaceValue::Six => draw_six(&mut padded_target, face_side_length),
         }
     }
 }

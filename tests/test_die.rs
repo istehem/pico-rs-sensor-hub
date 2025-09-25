@@ -14,10 +14,9 @@ mod tests {
         static ref TEST_MUTEX: Mutex<()> = Mutex::new(());
     }
 
-    const PADDING: i32 = 8;
     const SCREEN_WIDTH: u32 = 255;
     const SCREEN_HEIGHT: u32 = SCREEN_WIDTH;
-    const FACE_SIDE_LENGTH: u32 = SCREEN_WIDTH - 2 * PADDING as u32;
+    const TARGET_SIDE_LENGTH: u32 = SCREEN_WIDTH;
 
     type Display = SimulatorDisplay<BinaryColor>;
 
@@ -38,8 +37,8 @@ mod tests {
     fn test_draw_face_one(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
 
-        let mut die = Die::new(FaceValue::One, FACE_SIDE_LENGTH);
-        die.draw(&mut display.translated(Point::new(PADDING, PADDING)))?;
+        let mut die = Die::new(FaceValue::One, TARGET_SIDE_LENGTH);
+        die.draw(&mut display)?;
         draw_in_window(&display)
     }
 
@@ -48,8 +47,8 @@ mod tests {
     fn test_draw_face_two(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
 
-        let mut die = Die::new(FaceValue::Two, FACE_SIDE_LENGTH);
-        die.draw(&mut display.translated(Point::new(PADDING, PADDING)))?;
+        let mut die = Die::new(FaceValue::Two, TARGET_SIDE_LENGTH);
+        die.draw(&mut display)?;
         draw_in_window(&display)
     }
 
@@ -58,8 +57,8 @@ mod tests {
     fn test_draw_face_three(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
 
-        let mut die = Die::new(FaceValue::Three, FACE_SIDE_LENGTH);
-        die.draw(&mut display.translated(Point::new(PADDING, PADDING)))?;
+        let mut die = Die::new(FaceValue::Three, TARGET_SIDE_LENGTH);
+        die.draw(&mut display)?;
         draw_in_window(&display)
     }
 
@@ -68,8 +67,8 @@ mod tests {
     fn test_draw_face_four(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
 
-        let mut die = Die::new(FaceValue::Four, FACE_SIDE_LENGTH);
-        die.draw(&mut display.translated(Point::new(PADDING, PADDING)))?;
+        let mut die = Die::new(FaceValue::Four, TARGET_SIDE_LENGTH);
+        die.draw(&mut display)?;
         draw_in_window(&display)
     }
 
@@ -78,8 +77,8 @@ mod tests {
     fn test_draw_face_five(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
 
-        let mut die = Die::new(FaceValue::Five, FACE_SIDE_LENGTH);
-        die.draw(&mut display.translated(Point::new(PADDING, PADDING)))?;
+        let mut die = Die::new(FaceValue::Five, TARGET_SIDE_LENGTH);
+        die.draw(&mut display)?;
         draw_in_window(&display)
     }
 
@@ -88,8 +87,8 @@ mod tests {
     fn test_draw_face_six(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
 
-        let mut die = Die::new(FaceValue::Six, FACE_SIDE_LENGTH);
-        die.draw(&mut display.translated(Point::new(PADDING, PADDING)))?;
+        let mut die = Die::new(FaceValue::Six, TARGET_SIDE_LENGTH);
+        die.draw(&mut display)?;
         draw_in_window(&display)
     }
 }

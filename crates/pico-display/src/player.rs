@@ -18,5 +18,5 @@ pub fn roll_two_dice<T>(target: &mut T, side_length: u32, _seed: u64) -> Result<
 where
     T: DrawTarget<Color = BinaryColor>,
 {
-    dice::double_sixes(target, side_length)
+    dice::four_sixes(target, side_length)
 }
