@@ -14,6 +14,13 @@ mod tests {
     const SCREEN_HEIGHT: u32 = SCREEN_WIDTH;
     const FACE_SIDE_LENGTH: u32 = SCREEN_WIDTH - 2 * PADDING as u32;
 
+    use lazy_static::lazy_static;
+    use std::sync::Mutex;
+
+    lazy_static! {
+        static ref TEST_MUTEX: Mutex<()> = Mutex::new(());
+    }
+
     type Display = SimulatorDisplay<BinaryColor>;
 
     fn draw_in_window(display: &Display) -> Result<(), Infallible> {
@@ -30,8 +37,22 @@ mod tests {
 
     #[rstest]
     #[test_log::test]
-    fn test_draw_face_one(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
+    fn test_roll_die(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
+        let _guard = TEST_MUTEX.lock().unwrap();
         player::roll_die(
+            &mut display.translated(Point::new(PADDING, PADDING)),
+            FACE_SIDE_LENGTH,
+            rand::random(),
+        )?;
+
+        draw_in_window(&display)
+    }
+
+    #[rstest]
+    #[test_log::test]
+    fn test_roll_two_dice(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        player::roll_two_dice(
             &mut display.translated(Point::new(PADDING, PADDING)),
             FACE_SIDE_LENGTH,
             rand::random(),

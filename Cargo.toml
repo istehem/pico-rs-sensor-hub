@@ -28,6 +28,8 @@ rp-pico = "0.9"
 # rp2040-hal = { version="0.10", features=["rt", "critical-section-impl"] }
 # rp2040-boot2 = "0.3"
 
+#pico-display = { path = "./crates/pico-display" }
+
 # cargo build/run
 [profile.dev]
 codegen-units = 1

@@ -4,7 +4,10 @@ use embedded_graphics::{
     primitives::{Circle, CornerRadii, PrimitiveStyle, Rectangle, RoundedRectangle},
 };
 
+use core::cmp::Ordering;
 use num_traits::float::FloatCore;
+use rand::distributions::{Distribution, Standard};
+use rand::Rng;
 
 struct Face {
     size: u32,
@@ -264,5 +267,52 @@ fn percent_of_to_nearest_odd(numer: u32, percent: u32) -> u32 {
         } else {
             rounded + 1
         }
+    }
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+pub enum FaceValue {
+    One,
+    Two,
+    Three,
+    Four,
+    Five,
+    Six,
+}
+
+#[derive(Eq)]
+pub struct Die {
+    side_length: u32,
+    value: FaceValue,
+}
+
+impl Die {
+    pub fn draw<T>(&mut self, target: &mut T) -> Result<(), T::Error>
+    where
+        T: DrawTarget<Color = BinaryColor>,
+    {
+        match &self.value {
+            FaceValue::One => draw_one(target, self.side_length),
+            FaceValue::Two => draw_two(target, self.side_length),
+            _ => draw_six(target, self.side_length),
+        }
+    }
+}
+
+impl PartialEq for Die {
+    fn eq(&self, other: &Self) -> bool {
+        self.value == other.value
+    }
+}
+
+impl Ord for Die {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.value.cmp(&other.value)
+    }
+}
+
+impl PartialOrd for Die {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.value.partial_cmp(&other.value)
     }
 }
