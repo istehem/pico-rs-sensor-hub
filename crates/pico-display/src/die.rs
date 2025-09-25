@@ -287,6 +287,10 @@ pub struct Die {
 }
 
 impl Die {
+    pub fn new(value: FaceValue, side_length: u32) -> Self {
+        Self { value, side_length }
+    }
+
     pub fn draw<T>(&mut self, target: &mut T) -> Result<(), T::Error>
     where
         T: DrawTarget<Color = BinaryColor>,
@@ -294,7 +298,10 @@ impl Die {
         match &self.value {
             FaceValue::One => draw_one(target, self.side_length),
             FaceValue::Two => draw_two(target, self.side_length),
-            _ => draw_six(target, self.side_length),
+            FaceValue::Three => draw_three(target, self.side_length),
+            FaceValue::Four => draw_four(target, self.side_length),
+            FaceValue::Five => draw_five(target, self.side_length),
+            FaceValue::Six => draw_six(target, self.side_length),
         }
     }
 }
@@ -314,5 +321,20 @@ impl Ord for Die {
 impl PartialOrd for Die {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.value.partial_cmp(&other.value)
+    }
+}
+
+impl Distribution<FaceValue> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> FaceValue {
+        let index: u8 = rng.gen_range(1..7);
+        match index {
+            1 => FaceValue::One,
+            2 => FaceValue::Two,
+            3 => FaceValue::Three,
+            4 => FaceValue::Four,
+            5 => FaceValue::Five,
+            6 => FaceValue::Six,
+            _ => unreachable!(),
+        }
     }
 }

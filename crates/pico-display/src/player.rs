@@ -10,18 +10,8 @@ where
     T: DrawTarget<Color = BinaryColor>,
 {
     let mut small_rng = SmallRng::seed_from_u64(seed);
-    let value = small_rng.gen_range(1..7);
-    //let value: die::FaceValue = small_rng.gen_range(die::FaceValue::One..die::Die::FaceValue::Six);
-
-    match value {
-        1 => die::draw_one(target, side_length),
-        2 => die::draw_two(target, side_length),
-        3 => die::draw_three(target, side_length),
-        4 => die::draw_four(target, side_length),
-        5 => die::draw_five(target, side_length),
-        6 => die::draw_six(target, side_length),
-        _ => panic!("this face value should never be generated"),
-    }
+    let value: die::FaceValue = small_rng.gen();
+    die::Die::new(value, side_length).draw(target)
 }
 
 pub fn roll_two_dice<T>(target: &mut T, side_length: u32, _seed: u64) -> Result<(), T::Error>
