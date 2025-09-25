@@ -320,7 +320,7 @@ impl Ord for Die {
 
 impl PartialOrd for Die {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.value.partial_cmp(&other.value)
+        Some(self.cmp(other))
     }
 }
 
