@@ -12,9 +12,15 @@ fn number_of_rows(number_of_dice: u32) -> u32 {
     }
 }
 
-pub fn draw_dice<T>(target: &mut T, side_length: u32, number_of_dice: u32) -> Result<(), T::Error>
+pub fn draw_dice<T, F>(
+    target: &mut T,
+    side_length: u32,
+    number_of_dice: u32,
+    mut face_value: F,
+) -> Result<(), T::Error>
 where
     T: DrawTarget<Color = BinaryColor>,
+    F: FnMut() -> FaceValue,
 {
     let sub_rows = number_of_rows(number_of_dice);
     let sub_target_length = side_length / sub_rows;
@@ -32,7 +38,7 @@ where
 
         let area = Rectangle::new(Point::new(x as i32, y as i32), size);
 
-        let mut die = Die::new(FaceValue::Six, sub_target_length);
+        let mut die = Die::new(face_value(), sub_target_length);
         die.draw(&mut target.cropped(&area))?;
     }
     Ok(())

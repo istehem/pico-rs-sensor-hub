@@ -3,20 +3,21 @@ use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
 
 use crate::dice;
-use crate::die;
 
 pub fn roll_die<T>(target: &mut T, side_length: u32, seed: u64) -> Result<(), T::Error>
 where
     T: DrawTarget<Color = BinaryColor>,
 {
     let mut small_rng = SmallRng::seed_from_u64(seed);
-    let value: die::FaceValue = small_rng.gen();
-    die::Die::new(value, side_length).draw(target)
+    let face_value = || small_rng.gen();
+    dice::draw_dice(target, side_length, 1, face_value)
 }
 
-pub fn roll_two_dice<T>(target: &mut T, side_length: u32, _seed: u64) -> Result<(), T::Error>
+pub fn roll_two_dice<T>(target: &mut T, side_length: u32, seed: u64) -> Result<(), T::Error>
 where
     T: DrawTarget<Color = BinaryColor>,
 {
-    dice::draw_dice(target, side_length, 2)
+    let mut small_rng = SmallRng::seed_from_u64(seed);
+    let face_value = || small_rng.gen();
+    dice::draw_dice(target, side_length, 2, face_value)
 }
