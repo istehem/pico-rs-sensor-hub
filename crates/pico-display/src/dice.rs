@@ -23,7 +23,7 @@ where
         .flat_map(|i| (0..sub_rows).map(move |j| (i, j)))
         .enumerate()
     {
-        if counter >= number_of_dice {
+        if (counter as u32) >= number_of_dice {
             break;
         }
         let x = sub_target_length * i;
