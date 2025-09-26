@@ -47,7 +47,7 @@ mod tests {
     #[test_log::test]
     fn test_roll_two_dice(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
-        player::roll_two_dice(&mut display, TARGET_SIDE_LENGTH, rand::random())?;
+        player::roll_five_dice(&mut display, TARGET_SIDE_LENGTH, rand::random())?;
 
         draw_in_window(&display)
     }

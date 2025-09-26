@@ -21,3 +21,30 @@ where
     let face_value = || small_rng.gen();
     dice::draw_dice(target, side_length, 2, face_value)
 }
+
+pub fn roll_three_dice<T>(target: &mut T, side_length: u32, seed: u64) -> Result<(), T::Error>
+where
+    T: DrawTarget<Color = BinaryColor>,
+{
+    let mut small_rng = SmallRng::seed_from_u64(seed);
+    let face_value = || small_rng.gen();
+    dice::draw_dice(target, side_length, 3, face_value)
+}
+
+pub fn roll_four_dice<T>(target: &mut T, side_length: u32, seed: u64) -> Result<(), T::Error>
+where
+    T: DrawTarget<Color = BinaryColor>,
+{
+    let mut small_rng = SmallRng::seed_from_u64(seed);
+    let face_value = || small_rng.gen();
+    dice::draw_dice(target, side_length, 4, face_value)
+}
+
+pub fn roll_five_dice<T>(target: &mut T, side_length: u32, seed: u64) -> Result<(), T::Error>
+where
+    T: DrawTarget<Color = BinaryColor>,
+{
+    let mut small_rng = SmallRng::seed_from_u64(seed);
+    let face_value = || small_rng.gen();
+    dice::draw_dice(target, side_length, 5, face_value)
+}
