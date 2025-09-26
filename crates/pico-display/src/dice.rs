@@ -18,9 +18,11 @@ where
 {
     let sub_rows = number_of_rows(number_of_dice);
     let sub_target_length = side_length / sub_rows;
-    let mut counter = 0;
 
-    for (i, j) in (0..sub_rows).flat_map(|i| (0..sub_rows).map(move |j| (i, j))) {
+    for (counter, (i, j)) in (0..sub_rows)
+        .flat_map(|i| (0..sub_rows).map(move |j| (i, j)))
+        .enumerate()
+    {
         if counter >= number_of_dice {
             break;
         }
@@ -32,7 +34,6 @@ where
 
         let mut die = Die::new(FaceValue::Six, sub_target_length);
         die.draw(&mut target.cropped(&area))?;
-        counter += 1;
     }
-    return Ok(());
+    Ok(())
 }
