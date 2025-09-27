@@ -1,3 +1,4 @@
+use core::cmp::min;
 use embedded_graphics::geometry::Size;
 use embedded_graphics::{prelude::*, primitives::rectangle::Rectangle};
 
@@ -23,7 +24,8 @@ where
     F: FnMut() -> FaceValue,
 {
     let sub_rows = number_of_rows(number_of_dice);
-    let sub_target_length = target.size().width / sub_rows;
+    let size = target.size();
+    let sub_target_length = min(size.width, size.height) / sub_rows;
 
     for (counter, (i, j)) in (0..sub_rows)
         .flat_map(|i| (0..sub_rows).map(move |j| (i, j)))
