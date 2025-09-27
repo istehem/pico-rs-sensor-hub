@@ -1,6 +1,7 @@
 use embedded_graphics::geometry::Size;
-use embedded_graphics::{pixelcolor::BinaryColor, prelude::*, primitives::rectangle::Rectangle};
+use embedded_graphics::{prelude::*, primitives::rectangle::Rectangle};
 
+use crate::aliases::Display;
 use crate::die::{Die, FaceValue};
 
 fn number_of_rows(number_of_dice: u32) -> u32 {
@@ -18,7 +19,7 @@ pub fn draw_dice<T, F>(
     mut face_value: F,
 ) -> Result<(), T::Error>
 where
-    T: DrawTarget<Color = BinaryColor> + embedded_graphics::geometry::OriginDimensions,
+    T: Display,
     F: FnMut() -> FaceValue,
 {
     let sub_rows = number_of_rows(number_of_dice);

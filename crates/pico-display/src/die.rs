@@ -8,6 +8,7 @@ use core::cmp::Ordering;
 use rand::distributions::{Distribution, Standard};
 use rand::Rng;
 
+use crate::aliases::{Display, DrawTarget};
 use crate::utils;
 
 const PADDING_IN_PERCENT: u32 = 3;
@@ -25,7 +26,7 @@ impl Face {
 
     fn draw<T>(&self, target: &mut T) -> Result<(), T::Error>
     where
-        T: DrawTarget<Color = BinaryColor>,
+        T: DrawTarget,
     {
         RoundedRectangle::new(
             Rectangle::new(Point::new(0, 0), Size::new(self.size, self.size)),
@@ -53,7 +54,7 @@ impl Pip {
 
     fn draw<T>(&self, target: &mut T, point: Point) -> Result<(), T::Error>
     where
-        T: DrawTarget<Color = BinaryColor>,
+        T: DrawTarget,
     {
         Circle::new(point, self.size)
             .into_styled(self.style)
@@ -62,49 +63,49 @@ impl Pip {
 
     fn draw_center_pip<T>(&self, target: &mut T) -> Result<(), T::Error>
     where
-        T: DrawTarget<Color = BinaryColor>,
+        T: DrawTarget,
     {
         self.draw(target, self.point.center_pip_point())
     }
 
     fn draw_upper_left_pip<T>(&self, target: &mut T) -> Result<(), T::Error>
     where
-        T: DrawTarget<Color = BinaryColor>,
+        T: DrawTarget,
     {
         self.draw(target, self.point.upper_left_pip_point())
     }
 
     fn draw_bottom_right_pip<T>(&self, target: &mut T) -> Result<(), T::Error>
     where
-        T: DrawTarget<Color = BinaryColor>,
+        T: DrawTarget,
     {
         self.draw(target, self.point.bottom_right_pip_point())
     }
 
     fn draw_bottom_left_pip<T>(&self, target: &mut T) -> Result<(), T::Error>
     where
-        T: DrawTarget<Color = BinaryColor>,
+        T: DrawTarget,
     {
         self.draw(target, self.point.bottom_left_pip_point())
     }
 
     fn draw_upper_right_pip<T>(&self, target: &mut T) -> Result<(), T::Error>
     where
-        T: DrawTarget<Color = BinaryColor>,
+        T: DrawTarget,
     {
         self.draw(target, self.point.upper_right_pip_point())
     }
 
     fn draw_center_left_pip<T>(&self, target: &mut T) -> Result<(), T::Error>
     where
-        T: DrawTarget<Color = BinaryColor>,
+        T: DrawTarget,
     {
         self.draw(target, self.point.center_left_pip_point())
     }
 
     fn draw_center_right_pip<T>(&self, target: &mut T) -> Result<(), T::Error>
     where
-        T: DrawTarget<Color = BinaryColor>,
+        T: DrawTarget,
     {
         self.draw(target, self.point.center_right_pip_point())
     }
@@ -168,7 +169,7 @@ impl PipPoint {
 
 fn draw_one<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
 where
-    T: DrawTarget<Color = BinaryColor>,
+    T: DrawTarget,
 {
     let pip = Pip::new(side_length);
 
@@ -180,7 +181,7 @@ where
 
 fn draw_two<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
 where
-    T: DrawTarget<Color = BinaryColor>,
+    T: DrawTarget,
 {
     let pip = Pip::new(side_length);
 
@@ -193,7 +194,7 @@ where
 
 fn draw_three<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
 where
-    T: DrawTarget<Color = BinaryColor>,
+    T: DrawTarget,
 {
     let pip = Pip::new(side_length);
 
@@ -207,7 +208,7 @@ where
 
 fn draw_four<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
 where
-    T: DrawTarget<Color = BinaryColor>,
+    T: DrawTarget,
 {
     let pip = Pip::new(side_length);
 
@@ -222,7 +223,7 @@ where
 
 fn draw_five<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
 where
-    T: DrawTarget<Color = BinaryColor>,
+    T: DrawTarget,
 {
     let pip = Pip::new(side_length);
 
@@ -238,7 +239,7 @@ where
 
 fn draw_six<T>(target: &mut T, side_length: u32) -> Result<(), T::Error>
 where
-    T: DrawTarget<Color = BinaryColor>,
+    T: DrawTarget,
 {
     let pip = Pip::new(side_length);
 
@@ -279,7 +280,7 @@ impl Die {
 
     pub fn draw<T>(&mut self, target: &mut T) -> Result<(), T::Error>
     where
-        T: DrawTarget<Color = BinaryColor>,
+        T: Display,
     {
         let padding = utils::percent_of(self.target_side_length, PADDING_IN_PERCENT);
 
