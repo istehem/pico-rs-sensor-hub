@@ -266,26 +266,22 @@ pub enum FaceValue {
 
 #[derive(Eq)]
 pub struct Die {
-    target_side_length: u32,
     value: FaceValue,
 }
 
 impl Die {
-    pub fn new(value: FaceValue, target_side_length: u32) -> Self {
-        Self {
-            value,
-            target_side_length,
-        }
+    pub fn new(value: FaceValue) -> Self {
+        Self { value }
     }
 
     pub fn draw<T>(&mut self, target: &mut T) -> Result<(), T::Error>
     where
         T: Display,
     {
-        let padding = utils::percent_of(self.target_side_length, PADDING_IN_PERCENT);
-
+        let target_side_length = target.size().width;
+        let padding = utils::percent_of(target_side_length, PADDING_IN_PERCENT);
+        let face_side_length = target_side_length - 2 * padding;
         let mut padded_target = target.translated(Point::new(padding as i32, padding as i32));
-        let face_side_length = self.target_side_length - 2 * padding;
 
         match &self.value {
             FaceValue::One => draw_one(&mut padded_target, face_side_length),

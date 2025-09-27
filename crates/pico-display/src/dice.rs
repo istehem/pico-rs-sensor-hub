@@ -38,7 +38,7 @@ where
 
         let area = Rectangle::new(Point::new(x as i32, y as i32), size);
 
-        let mut die = Die::new(face_value(), sub_target_length);
+        let mut die = Die::new(face_value());
         die.draw(&mut target.cropped(&area))?;
     }
     Ok(())
