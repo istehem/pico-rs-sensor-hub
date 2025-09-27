@@ -1,12 +1,17 @@
-use embedded_graphics::{pixelcolor::BinaryColor, prelude::DrawTarget};
+use embedded_graphics::{geometry::OriginDimensions, pixelcolor::BinaryColor, prelude::DrawTarget};
 use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
+use trait_set::trait_set;
 
 use crate::dice;
 
+trait_set! {
+    pub trait Display = DrawTarget<Color = BinaryColor> + OriginDimensions;
+}
+
 pub fn roll_die<T>(target: &mut T, seed: u64) -> Result<(), T::Error>
 where
-    T: DrawTarget<Color = BinaryColor> + embedded_graphics::geometry::OriginDimensions,
+    T: Display,
 {
     let mut small_rng = SmallRng::seed_from_u64(seed);
     let face_value = || small_rng.gen();
@@ -15,7 +20,7 @@ where
 
 pub fn roll_two_dice<T>(target: &mut T, seed: u64) -> Result<(), T::Error>
 where
-    T: DrawTarget<Color = BinaryColor> + embedded_graphics::geometry::OriginDimensions,
+    T: Display,
 {
     let mut small_rng = SmallRng::seed_from_u64(seed);
     let face_value = || small_rng.gen();
@@ -24,7 +29,7 @@ where
 
 pub fn roll_three_dice<T>(target: &mut T, seed: u64) -> Result<(), T::Error>
 where
-    T: DrawTarget<Color = BinaryColor> + embedded_graphics::geometry::OriginDimensions,
+    T: Display,
 {
     let mut small_rng = SmallRng::seed_from_u64(seed);
     let face_value = || small_rng.gen();
@@ -33,7 +38,7 @@ where
 
 pub fn roll_four_dice<T>(target: &mut T, seed: u64) -> Result<(), T::Error>
 where
-    T: DrawTarget<Color = BinaryColor> + embedded_graphics::geometry::OriginDimensions,
+    T: Display,
 {
     let mut small_rng = SmallRng::seed_from_u64(seed);
     let face_value = || small_rng.gen();
@@ -42,7 +47,7 @@ where
 
 pub fn roll_five_dice<T>(target: &mut T, seed: u64) -> Result<(), T::Error>
 where
-    T: DrawTarget<Color = BinaryColor> + embedded_graphics::geometry::OriginDimensions,
+    T: Display,
 {
     let mut small_rng = SmallRng::seed_from_u64(seed);
     let face_value = || small_rng.gen();
