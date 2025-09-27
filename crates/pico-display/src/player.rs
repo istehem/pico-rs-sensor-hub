@@ -1,13 +1,8 @@
-use embedded_graphics::{geometry::OriginDimensions, pixelcolor::BinaryColor, prelude::DrawTarget};
 use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
-use trait_set::trait_set;
 
+use crate::aliases::Display;
 use crate::dice;
-
-trait_set! {
-    pub trait Display = DrawTarget<Color = BinaryColor> + OriginDimensions;
-}
 
 pub fn roll_die<T>(target: &mut T, seed: u64) -> Result<(), T::Error>
 where
