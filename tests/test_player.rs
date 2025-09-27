@@ -11,7 +11,6 @@ mod tests {
 
     const SCREEN_WIDTH: u32 = 255;
     const SCREEN_HEIGHT: u32 = SCREEN_WIDTH;
-    const TARGET_SIDE_LENGTH: u32 = SCREEN_WIDTH;
 
     use lazy_static::lazy_static;
     use std::sync::Mutex;
@@ -38,7 +37,7 @@ mod tests {
     #[test_log::test]
     fn test_roll_die(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
-        player::roll_die(&mut display, TARGET_SIDE_LENGTH, rand::random())?;
+        player::roll_die(&mut display, rand::random())?;
 
         draw_in_window(&display)
     }
@@ -47,7 +46,7 @@ mod tests {
     #[test_log::test]
     fn test_roll_two_dice(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
-        player::roll_five_dice(&mut display, TARGET_SIDE_LENGTH, rand::random())?;
+        player::roll_five_dice(&mut display, rand::random())?;
 
         draw_in_window(&display)
     }

@@ -14,16 +14,15 @@ fn number_of_rows(number_of_dice: u32) -> u32 {
 
 pub fn draw_dice<T, F>(
     target: &mut T,
-    side_length: u32,
     number_of_dice: u32,
     mut face_value: F,
 ) -> Result<(), T::Error>
 where
-    T: DrawTarget<Color = BinaryColor>,
+    T: DrawTarget<Color = BinaryColor> + embedded_graphics::geometry::OriginDimensions,
     F: FnMut() -> FaceValue,
 {
     let sub_rows = number_of_rows(number_of_dice);
-    let sub_target_length = side_length / sub_rows;
+    let sub_target_length = target.size().width / sub_rows;
 
     for (counter, (i, j)) in (0..sub_rows)
         .flat_map(|i| (0..sub_rows).map(move |j| (i, j)))
