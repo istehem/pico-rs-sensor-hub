@@ -9,7 +9,7 @@ where
     T: Display,
 {
     let mut small_rng = SmallRng::seed_from_u64(seed);
-    let face_value = || small_rng.gen();
+    let face_value = || small_rng.random();
     dice::draw_dice(target, 1, face_value)
 }
 
@@ -18,7 +18,7 @@ where
     T: Display,
 {
     let mut small_rng = SmallRng::seed_from_u64(seed);
-    let face_value = || small_rng.gen();
+    let face_value = || small_rng.random();
     dice::draw_dice(target, 2, face_value)
 }
 
@@ -27,7 +27,7 @@ where
     T: Display,
 {
     let mut small_rng = SmallRng::seed_from_u64(seed);
-    let face_value = || small_rng.gen();
+    let face_value = || small_rng.random();
     dice::draw_dice(target, 3, face_value)
 }
 
@@ -36,7 +36,7 @@ where
     T: Display,
 {
     let mut small_rng = SmallRng::seed_from_u64(seed);
-    let face_value = || small_rng.gen();
+    let face_value = || small_rng.random();
     dice::draw_dice(target, 4, face_value)
 }
 
@@ -45,6 +45,6 @@ where
     T: Display,
 {
     let mut small_rng = SmallRng::seed_from_u64(seed);
-    let face_value = || small_rng.gen();
+    let face_value = || small_rng.random();
     dice::draw_dice(target, 5, face_value)
 }

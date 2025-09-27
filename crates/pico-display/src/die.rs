@@ -5,7 +5,7 @@ use embedded_graphics::{
 };
 
 use core::cmp::Ordering;
-use rand::distributions::{Distribution, Standard};
+use rand::distr::{Distribution, StandardUniform};
 use rand::Rng;
 
 use crate::aliases::{Display, DrawTarget};
@@ -312,9 +312,9 @@ impl PartialOrd for Die {
     }
 }
 
-impl Distribution<FaceValue> for Standard {
+impl Distribution<FaceValue> for StandardUniform {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> FaceValue {
-        let index: u8 = rng.gen_range(1..7);
+        let index: u8 = rng.random_range(1..7);
         match index {
             1 => FaceValue::One,
             2 => FaceValue::Two,
