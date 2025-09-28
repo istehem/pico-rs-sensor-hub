@@ -21,9 +21,6 @@ where
     let mut counter = 0;
 
     for i in 0..colums {
-        if counter >= number_of_dice {
-            break;
-        }
         for j in 0..rows {
             if counter >= number_of_dice {
                 break;
