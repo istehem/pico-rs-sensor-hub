@@ -9,8 +9,9 @@ mod tests {
     use embedded_graphics::{pixelcolor::BinaryColor, prelude::*};
     use embedded_graphics_simulator::{OutputSettingsBuilder, SimulatorDisplay, Window};
 
-    const SCREEN_WIDTH: u32 = 2 * 128;
-    const SCREEN_HEIGHT: u32 = 2 * 64;
+    const SCALE: u32 = 4;
+    const SCREEN_WIDTH: u32 = SCALE * 128;
+    const SCREEN_HEIGHT: u32 = SCALE * 64;
 
     use lazy_static::lazy_static;
     use std::sync::Mutex;
