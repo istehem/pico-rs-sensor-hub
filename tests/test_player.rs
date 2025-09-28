@@ -9,7 +9,7 @@ mod tests {
     use embedded_graphics::{pixelcolor::BinaryColor, prelude::*};
     use embedded_graphics_simulator::{OutputSettingsBuilder, SimulatorDisplay, Window};
 
-    const SCALE: u32 = 4;
+    const SCALE: u32 = 5;
     const SCREEN_WIDTH: u32 = SCALE * 128;
     const SCREEN_HEIGHT: u32 = SCALE * 64;
 
@@ -36,6 +36,7 @@ mod tests {
 
     #[rstest]
     #[test_log::test]
+    #[ignore]
     fn test_roll_die(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
         player::roll_die(&mut display, rand::random())?;
@@ -45,9 +46,30 @@ mod tests {
 
     #[rstest]
     #[test_log::test]
+    #[ignore]
     fn test_roll_two_dice(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
         player::roll_two_dice(&mut display, rand::random())?;
+
+        draw_in_window(&display)
+    }
+
+    #[rstest]
+    #[test_log::test]
+    #[ignore]
+    fn test_roll_three_dice(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        player::roll_three_dice(&mut display, rand::random())?;
+
+        draw_in_window(&display)
+    }
+
+    #[rstest]
+    #[test_log::test]
+    #[ignore]
+    fn test_roll_four_dice(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        player::roll_four_dice(&mut display, rand::random())?;
 
         draw_in_window(&display)
     }
