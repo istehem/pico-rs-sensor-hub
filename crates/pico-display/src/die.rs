@@ -12,6 +12,7 @@ use crate::aliases::{Display, DrawTarget};
 use crate::utils;
 
 const PADDING_IN_PERCENT: u32 = 3;
+const CORNER_RADIUS_IN_PERCENT: u32 = 6;
 
 struct Face {
     size: u32,
@@ -28,9 +29,10 @@ impl Face {
     where
         T: DrawTarget,
     {
+        let radius = utils::percent_of(self.size, CORNER_RADIUS_IN_PERCENT);
         RoundedRectangle::new(
             Rectangle::new(Point::new(0, 0), Size::new(self.size, self.size)),
-            CornerRadii::new(Size::new(16, 16)),
+            CornerRadii::new(Size::new(radius, radius)),
         )
         .translate(Point::new(0, 0))
         .into_styled(self.style)
