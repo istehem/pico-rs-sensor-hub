@@ -9,8 +9,8 @@ mod tests {
     use embedded_graphics::{pixelcolor::BinaryColor, prelude::*};
     use embedded_graphics_simulator::{OutputSettingsBuilder, SimulatorDisplay, Window};
 
-    const SCREEN_WIDTH: u32 = 255;
-    const SCREEN_HEIGHT: u32 = SCREEN_WIDTH;
+    const SCREEN_WIDTH: u32 = 2 * 128;
+    const SCREEN_HEIGHT: u32 = 2 * 64;
 
     use lazy_static::lazy_static;
     use std::sync::Mutex;
@@ -45,6 +45,15 @@ mod tests {
     #[rstest]
     #[test_log::test]
     fn test_roll_two_dice(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        player::roll_two_dice(&mut display, rand::random())?;
+
+        draw_in_window(&display)
+    }
+
+    #[rstest]
+    #[test_log::test]
+    fn test_roll_five_dice(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
         player::roll_five_dice(&mut display, rand::random())?;
 
