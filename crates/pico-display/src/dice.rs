@@ -18,27 +18,23 @@ where
 
     let (colums, rows, sub_target_length) = find_best_grid(number_of_dice, size.width, size.height);
 
-    let mut counter = 0;
-
-    for i in 0..colums {
-        for j in 0..rows {
-            if counter >= number_of_dice {
-                break;
-            }
-
-            let x = sub_target_length * i;
-            let y = sub_target_length * j;
-            let size = Size::new(sub_target_length, sub_target_length);
-
-            let area = Rectangle::new(Point::new(x as i32, y as i32), size);
-
-            let mut die = Die::new(face_value());
-            die.draw(&mut target.cropped(&area))?;
-
-            counter += 1;
+    for (counter, (i, j)) in (0..colums)
+        .flat_map(|i| (0..rows).map(move |j| (i, j)))
+        .enumerate()
+    {
+        if (counter as u32) >= number_of_dice {
+            break;
         }
-    }
 
+        let x = sub_target_length * i;
+        let y = sub_target_length * j;
+        let size = Size::new(sub_target_length, sub_target_length);
+
+        let area = Rectangle::new(Point::new(x as i32, y as i32), size);
+
+        let mut die = Die::new(face_value());
+        die.draw(&mut target.cropped(&area))?;
+    }
     Ok(())
 }
 
