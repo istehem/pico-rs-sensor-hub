@@ -9,6 +9,7 @@ use defmt::*;
 use defmt_rtt as _;
 use embedded_hal::digital::OutputPin;
 use panic_probe as _;
+use ssd1306::I2CDisplayInterface;
 
 // Provide an alias for our BSP so we can switch targets quickly.
 // Uncomment the BSP you included in Cargo.toml, the rest of the code does not need to change.
@@ -17,11 +18,14 @@ use rp_pico as bsp;
 
 use bsp::hal::{
     clocks::{init_clocks_and_plls, Clock},
+    fugit::RateExtU32,
+    gpio,
     pac,
     // needed to handle irq interrupts
     // pac::interrupt,
     sio::Sio,
     watchdog::Watchdog,
+    I2C,
 };
 
 #[entry]
@@ -54,6 +58,26 @@ fn main() -> ! {
         sio.gpio_bank0,
         &mut pac.RESETS,
     );
+
+    let sda_pin = pins
+        .gpio6
+        .into_pull_up_input()
+        .into_function::<gpio::FunctionI2C>();
+    let scl_pin = pins
+        .gpio7
+        .into_pull_up_input()
+        .into_function::<gpio::FunctionI2C>();
+
+    let i2c = I2C::i2c1(
+        pac.I2C1,
+        sda_pin,
+        scl_pin,
+        400_u32.kHz(),
+        &mut pac.RESETS,
+        &clocks.system_clock,
+    );
+
+    let _interface = I2CDisplayInterface::new(i2c);
 
     // This is the correct pin on the Raspberry Pico board. On other boards, even if they have an
     // on-board LED, it might need to be changed.
