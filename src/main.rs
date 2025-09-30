@@ -5,11 +5,12 @@
 #![no_main]
 
 use bsp::entry;
+use core::fmt::Write;
 use defmt::*;
 use defmt_rtt as _;
 use embedded_hal::digital::OutputPin;
 use panic_probe as _;
-use ssd1306::I2CDisplayInterface;
+use ssd1306::{rotation::DisplayRotation, size::DisplaySize128x64, I2CDisplayInterface, Ssd1306};
 
 // Provide an alias for our BSP so we can switch targets quickly.
 // Uncomment the BSP you included in Cargo.toml, the rest of the code does not need to change.
@@ -77,7 +78,12 @@ fn main() -> ! {
         &clocks.system_clock,
     );
 
-    let _interface = I2CDisplayInterface::new(i2c);
+    let interface = I2CDisplayInterface::new(i2c);
+    let mut display =
+        Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0).into_terminal_mode();
+
+    display.clear().unwrap();
+    display.write_str("Hello, World!").unwrap();
 
     // This is the correct pin on the Raspberry Pico board. On other boards, even if they have an
     // on-board LED, it might need to be changed.
