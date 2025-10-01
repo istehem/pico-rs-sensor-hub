@@ -6,10 +6,11 @@
 
 use bsp::entry;
 use core::fmt::Write;
-use defmt::*;
+use defmt::info;
 use defmt_rtt as _;
 use embedded_hal::digital::OutputPin;
 use panic_probe as _;
+use ssd1306::mode::DisplayConfig;
 use ssd1306::{rotation::DisplayRotation, size::DisplaySize128x64, I2CDisplayInterface, Ssd1306};
 
 // Provide an alias for our BSP so we can switch targets quickly.
@@ -82,8 +83,13 @@ fn main() -> ! {
     let mut display =
         Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0).into_terminal_mode();
 
+    display.init().unwrap();
     display.clear().unwrap();
-    display.write_str("Hello, World!").unwrap();
+
+    let message = "Hello\nWorld!";
+    for c in message.chars() {
+        display.write_char(c).unwrap();
+    }
 
     // This is the correct pin on the Raspberry Pico board. On other boards, even if they have an
     // on-board LED, it might need to be changed.
@@ -99,7 +105,7 @@ fn main() -> ! {
     loop {
         info!("on!");
         led_pin.set_high().unwrap();
-        delay.delay_ms(2000);
+        delay.delay_ms(500);
         info!("off!");
         led_pin.set_low().unwrap();
         delay.delay_ms(1000);
