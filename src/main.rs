@@ -13,6 +13,8 @@ use panic_probe as _;
 use ssd1306::mode::DisplayConfig;
 use ssd1306::{rotation::DisplayRotation, size::DisplaySize128x64, I2CDisplayInterface, Ssd1306};
 
+use pico_display::player;
+
 // Provide an alias for our BSP so we can switch targets quickly.
 // Uncomment the BSP you included in Cargo.toml, the rest of the code does not need to change.
 use rp_pico as bsp;
@@ -86,10 +88,17 @@ fn main() -> ! {
     display.init().unwrap();
     display.clear().unwrap();
 
+    // display.write_str only displays the last character in the string.
+    // Could display.flush() solve the incomplete rendering problem?
     let message = "Hello\nWorld!";
     for c in message.chars() {
         display.write_char(c).unwrap();
     }
+
+    delay.delay_ms(2000);
+
+    let mut display = display.into_buffered_graphics_mode();
+    player::roll_die(&mut display, 12345).unwrap();
 
     // This is the correct pin on the Raspberry Pico board. On other boards, even if they have an
     // on-board LED, it might need to be changed.
