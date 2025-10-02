@@ -23,8 +23,14 @@ rp-pico = "0.9"
 ssd1306 = "0.10.0"
 
 pico-display = { path = "./crates/pico-display" }
+embedded-graphics = { workspace = true }
+rand = { workspace = true }
+
+[workspace.dependencies]
 embedded-graphics = "0.8.1"
+num-traits = { version = "0.2.19", default-features = false }
 rand = { version = "0.9.2", features = ["small_rng"], default-features = false }
+trait-set = "0.3.0"
 
 # but you can use any BSP. Uncomment this to use the pro_micro_rp2040 BSP instead
 # sparkfun-pro-micro-rp2040 = "0.8"
