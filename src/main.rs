@@ -14,6 +14,9 @@ use ssd1306::{rotation::DisplayRotation, size::DisplaySize128x64, I2CDisplayInte
 
 use embedded_graphics::draw_target::DrawTarget;
 use embedded_graphics::pixelcolor::BinaryColor;
+use rand::rngs::SmallRng;
+use rand::SeedableRng;
+
 use pico_display::player;
 
 // Provide an alias for our BSP so we can switch targets quickly.
@@ -88,8 +91,8 @@ fn main() -> ! {
 
     display.init().unwrap();
     display.clear(BinaryColor::Off).unwrap();
-    display.flush().unwrap();
-    player::roll_five_dice(&mut display, 12345).unwrap();
+    let small_rng = SmallRng::seed_from_u64(12345);
+    player::roll_five_dice(&mut display, small_rng).unwrap();
     display.flush().unwrap();
 
     // This is the correct pin on the Raspberry Pico board. On other boards, even if they have an
