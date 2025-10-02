@@ -91,9 +91,6 @@ fn main() -> ! {
 
     display.init().unwrap();
     display.clear(BinaryColor::Off).unwrap();
-    let small_rng = SmallRng::seed_from_u64(12345);
-    player::roll_five_dice(&mut display, small_rng).unwrap();
-    display.flush().unwrap();
 
     // This is the correct pin on the Raspberry Pico board. On other boards, even if they have an
     // on-board LED, it might need to be changed.
@@ -105,14 +102,14 @@ fn main() -> ! {
     // LED to one of the GPIO pins, and reference that pin here. Don't forget adding an appropriate resistor
     // in series with the LED.
     let mut led_pin = pins.led.into_push_pull_output();
+    led_pin.set_high().unwrap();
 
+    let mut small_rng = SmallRng::seed_from_u64(12345);
     loop {
-        info!("on!");
-        led_pin.set_high().unwrap();
-        delay.delay_ms(500);
-        info!("off!");
-        led_pin.set_low().unwrap();
-        delay.delay_ms(1000);
+        info!("rolling!");
+        small_rng = player::roll_five_dice(&mut display, small_rng).unwrap();
+        display.flush().unwrap();
+        delay.delay_ms(2000);
     }
 }
 
