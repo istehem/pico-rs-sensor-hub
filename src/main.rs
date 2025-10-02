@@ -87,7 +87,6 @@ fn main() -> ! {
         .into_buffered_graphics_mode();
 
     display.init().unwrap();
-    display.clear(BinaryColor::Off).unwrap();
 
     let mut led_pin = pins.led.into_push_pull_output();
     led_pin.set_high().unwrap();
@@ -95,8 +94,9 @@ fn main() -> ! {
     let mut small_rng = SmallRng::seed_from_u64(12345);
     loop {
         info!("rolling!");
+        display.clear(BinaryColor::Off).unwrap();
         small_rng = player::roll_five_dice(&mut display, small_rng).unwrap();
         display.flush().unwrap();
-        delay.delay_ms(2000);
+        delay.delay_ms(5000);
     }
 }
