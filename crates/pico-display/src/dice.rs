@@ -17,6 +17,8 @@ where
     let size = target.size();
 
     let (colums, rows, sub_target_length) = find_best_grid(number_of_dice, size.width, size.height);
+    let rows_excess_space = (size.height - sub_target_length * rows) / 2;
+    let columns_excess_space = (size.width - sub_target_length * colums) / 2;
 
     for (counter, (i, j)) in (0..colums)
         .flat_map(|i| (0..rows).map(move |j| (i, j)))
@@ -26,8 +28,8 @@ where
             break;
         }
 
-        let x = sub_target_length * i;
-        let y = sub_target_length * j;
+        let x = sub_target_length * i + columns_excess_space;
+        let y = sub_target_length * j + rows_excess_space;
         let size = Size::new(sub_target_length, sub_target_length);
 
         let area = Rectangle::new(Point::new(x as i32, y as i32), size);
