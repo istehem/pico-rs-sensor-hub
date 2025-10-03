@@ -95,7 +95,7 @@ fn main() -> ! {
     loop {
         info!("rolling!");
         display.clear(BinaryColor::Off).unwrap();
-        small_rng = player::roll_five_dice(&mut display, small_rng).unwrap();
+        small_rng = player::roll_one_to_five_number_of_dice(&mut display, small_rng).unwrap();
         display.flush().unwrap();
         delay.delay_ms(5000);
     }

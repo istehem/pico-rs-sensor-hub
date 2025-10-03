@@ -97,12 +97,25 @@ mod tests {
 
     #[rstest]
     #[test_log::test]
+    #[ignore]
     fn test_roll_five_dice(
         #[from(init_display)] mut display: Display,
         #[from(gen_small_rng)] small_rng: SmallRng,
     ) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
         player::roll_five_dice(&mut display, small_rng)?;
+
+        draw_in_window(&display)
+    }
+
+    #[rstest]
+    #[test_log::test]
+    fn test_roll_one_to_five_number_of_dice(
+        #[from(init_display)] mut display: Display,
+        #[from(gen_small_rng)] small_rng: SmallRng,
+    ) -> Result<(), Infallible> {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        player::roll_one_to_five_number_of_dice(&mut display, small_rng)?;
 
         draw_in_window(&display)
     }
