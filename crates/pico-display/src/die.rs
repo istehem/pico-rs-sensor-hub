@@ -256,7 +256,7 @@ where
     face.draw(target)
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
 pub enum FaceValue {
     One,
     Two,
@@ -266,9 +266,22 @@ pub enum FaceValue {
     Six,
 }
 
-#[derive(Eq)]
+impl FaceValue {
+    pub fn as_u8(&self) -> u8 {
+        match self {
+            FaceValue::One => 1,
+            FaceValue::Two => 2,
+            FaceValue::Three => 3,
+            FaceValue::Four => 4,
+            FaceValue::Five => 5,
+            FaceValue::Six => 6,
+        }
+    }
+}
+
+#[derive(Eq, Copy, Clone)]
 pub struct Die {
-    value: FaceValue,
+    pub value: FaceValue,
 }
 
 impl Die {

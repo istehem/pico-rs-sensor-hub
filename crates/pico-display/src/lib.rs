@@ -5,3 +5,4 @@ mod utils;
 
 pub mod die;
 pub mod player;
+pub mod two_four_eighteen;
