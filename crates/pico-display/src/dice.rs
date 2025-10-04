@@ -2,19 +2,27 @@ use core::cmp::min;
 use embedded_graphics::geometry::Size;
 use embedded_graphics::{prelude::*, primitives::rectangle::Rectangle};
 
-use crate::aliases::Display;
-use crate::die::{Die, FaceValue};
-
 extern crate alloc;
 use alloc::vec::Vec;
+
+use crate::aliases::Display;
+use crate::die::{Die, FaceValue};
 
 pub struct Dice {
     dice: Vec<Die>,
 }
 
 impl Dice {
-    pub fn roll() -> Self {
-        Dice { dice: Vec::new() }
+    pub fn roll<F>(mut face_value: F, number_of_dice: u32) -> Self
+    where
+        F: FnMut() -> FaceValue,
+    {
+        let mut dice = Vec::new();
+        for _ in 0..number_of_dice {
+            let die = Die::new(face_value());
+            dice.push(die);
+        }
+        Dice { dice }
     }
 
     pub fn sum(&self) -> u8 {
@@ -54,41 +62,6 @@ impl Dice {
         }
         Ok(())
     }
-}
-
-pub fn draw_dice<T, F>(
-    target: &mut T,
-    number_of_dice: u32,
-    mut face_value: F,
-) -> Result<(), T::Error>
-where
-    T: Display,
-    F: FnMut() -> FaceValue,
-{
-    let size = target.size();
-
-    let (colums, rows, sub_target_length) = find_best_grid(number_of_dice, size.width, size.height);
-    let rows_excess_space = (size.height - sub_target_length * rows) / 2;
-    let columns_excess_space = (size.width - sub_target_length * colums) / 2;
-
-    for (counter, (i, j)) in (0..colums)
-        .flat_map(|i| (0..rows).map(move |j| (i, j)))
-        .enumerate()
-    {
-        if (counter as u32) >= number_of_dice {
-            break;
-        }
-
-        let x = sub_target_length * i + columns_excess_space;
-        let y = sub_target_length * j + rows_excess_space;
-        let size = Size::new(sub_target_length, sub_target_length);
-
-        let area = Rectangle::new(Point::new(x as i32, y as i32), size);
-
-        let mut die = Die::new(face_value());
-        die.draw(&mut target.cropped(&area))?;
-    }
-    Ok(())
 }
 
 fn find_best_grid(number_of_entries: u32, width: u32, height: u32) -> (u32, u32, u32) {

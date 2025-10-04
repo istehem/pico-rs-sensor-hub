@@ -1,4 +1,6 @@
+use crate::dice::Dice;
 use rand::rngs::SmallRng;
+use rand::Rng;
 
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 enum NumberOfDice {
@@ -28,7 +30,13 @@ impl Game {
 
     pub fn play(&mut self) -> () {
         if self.dice_left == NumberOfDice::Five {
-            self.dice_left = NumberOfDice::Four;
+            let face_value = || self.small_rng.random();
+            let dice = Dice::roll(face_value, 5);
+            if dice.sum() < 17 {
+                self.dice_left = NumberOfDice::Four;
+            } else {
+                self.dice_left = NumberOfDice::Three;
+            }
         }
     }
 }
