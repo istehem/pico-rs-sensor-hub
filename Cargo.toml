@@ -25,6 +25,7 @@ ssd1306 = "0.10.0"
 pico-display = { path = "./crates/pico-display" }
 embedded-graphics = { workspace = true }
 rand = { workspace = true }
+embedded-alloc = "0.6.0"
 
 [workspace.dependencies]
 embedded-graphics = "0.8.1"
@@ -38,8 +39,6 @@ trait-set = "0.3.0"
 # If you're not going to use a Board Support Package you'll need these:
 # rp2040-hal = { version="0.10", features=["rt", "critical-section-impl"] }
 # rp2040-boot2 = "0.3"
-
-#pico-display = { path = "./crates/pico-display" }
 
 # cargo build/run
 [profile.dev]

@@ -33,9 +33,20 @@ use bsp::hal::{
     I2C,
 };
 
+extern crate alloc;
+
+use embedded_alloc::LlffHeap;
+
+#[global_allocator]
+static HEAP: LlffHeap = LlffHeap::empty();
+
 #[entry]
 fn main() -> ! {
     info!("Program start");
+    {
+        unsafe { HEAP.init(cortex_m_rt::heap_start() as usize, 8 * 1024) }
+    }
+
     let mut pac = pac::Peripherals::take().unwrap();
     let core = pac::CorePeripherals::take().unwrap();
     let mut watchdog = Watchdog::new(pac.WATCHDOG);

@@ -5,11 +5,18 @@ use embedded_graphics::{prelude::*, primitives::rectangle::Rectangle};
 use crate::aliases::Display;
 use crate::die::{Die, FaceValue};
 
+extern crate alloc;
+use alloc::vec::Vec;
+
 pub struct Dice {
-    dice: [Die],
+    dice: Vec<Die>,
 }
 
 impl Dice {
+    pub fn roll() -> Self {
+        Dice { dice: Vec::new() }
+    }
+
     pub fn sum(&self) -> u8 {
         self.dice
             .iter()
