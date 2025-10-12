@@ -31,6 +31,10 @@ impl Dice {
             .fold(0, |acc, &die| acc + die.value.as_u8())
     }
 
+    pub fn has(&self, face_value: FaceValue) -> bool {
+        self.dice.iter().any(|&die| die.value == face_value)
+    }
+
     pub fn draw<T>(&self, target: &mut T) -> Result<(), T::Error>
     where
         T: Display,
