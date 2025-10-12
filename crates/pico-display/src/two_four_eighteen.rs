@@ -9,6 +9,7 @@ use alloc::vec::Vec;
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
 enum NumberOfDice {
+    Zero,
     One,
     Two,
     Three,
@@ -19,6 +20,7 @@ enum NumberOfDice {
 impl NumberOfDice {
     fn as_u8(&self) -> u8 {
         match self {
+            NumberOfDice::Zero => 0,
             NumberOfDice::One => 1,
             NumberOfDice::Two => 2,
             NumberOfDice::Three => 3,
@@ -33,7 +35,8 @@ impl NumberOfDice {
             2 => NumberOfDice::Two,
             3 => NumberOfDice::Three,
             4 => NumberOfDice::Four,
-            _ => NumberOfDice::Five,
+            5 => NumberOfDice::Five,
+            _ => NumberOfDice::Zero,
         }
     }
 }
