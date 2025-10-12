@@ -35,6 +35,10 @@ impl Dice {
             .collect()
     }
 
+    pub fn max(&self) -> Option<Die> {
+        self.dice.iter().max().copied()
+    }
+
     pub fn draw<T>(&self, target: &mut T) -> Result<(), T::Error>
     where
         T: Display,

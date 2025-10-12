@@ -65,24 +65,26 @@ impl Game {
     }
 
     pub fn play(&mut self) {
-        if self.dice_left == NumberOfDice::Five {
-            let face_value = || self.small_rng.random();
-            let dice = Dice::roll(face_value, 5);
-            let mut picks = Vec::new();
-            if !self.has_four() {
-                picks.append(&mut dice.pick(FaceValue::Four, Some(1)));
-            }
-            if !self.has_two() {
-                picks.append(&mut dice.pick(FaceValue::Two, Some(1)));
-            }
-            if has(&picks, FaceValue::Four) && has(&picks, FaceValue::Two) {
-                picks.append(&mut dice.pick(FaceValue::Six, None));
-            }
-
-            self.rolled = picks;
-
-            self.dice_left = self.dice_left - self.rolled.len() as u8;
+        let face_value = || self.small_rng.random();
+        let dice = Dice::roll(face_value, self.dice_left.as_u8() as u32);
+        let mut picks = Vec::new();
+        if !self.has_four() {
+            picks.append(&mut dice.pick(FaceValue::Four, Some(1)));
         }
+        if !self.has_two() {
+            picks.append(&mut dice.pick(FaceValue::Two, Some(1)));
+        }
+        if has(&picks, FaceValue::Four) && has(&picks, FaceValue::Two) {
+            picks.append(&mut dice.pick(FaceValue::Six, None));
+        }
+        if picks.is_empty() {
+            // there must be a max value since dice were rolled
+            picks.push(dice.max().unwrap());
+        }
+
+        self.rolled = picks;
+
+        self.dice_left = self.dice_left - self.rolled.len() as u8;
     }
 
     pub fn has_four(&self) -> bool {
