@@ -25,12 +25,6 @@ impl Dice {
         Dice { dice }
     }
 
-    pub fn sum(&self) -> u8 {
-        self.dice
-            .iter()
-            .fold(0, |acc, &die| acc + die.value.as_u8())
-    }
-
     pub fn has(&self, face_value: FaceValue) -> bool {
         self.dice.iter().any(|&die| die.value == face_value)
     }

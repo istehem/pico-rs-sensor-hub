@@ -1,18 +1,49 @@
 use crate::dice::Dice;
 use crate::die::{Die, FaceValue};
+use core::ops::Sub;
 use rand::rngs::SmallRng;
 use rand::Rng;
 
 extern crate alloc;
 use alloc::vec::Vec;
 
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
 enum NumberOfDice {
-    //One,
-    //Two,
+    One,
+    Two,
     Three,
     Four,
     Five,
+}
+
+impl NumberOfDice {
+    fn as_u8(&self) -> u8 {
+        match self {
+            NumberOfDice::One => 1,
+            NumberOfDice::Two => 2,
+            NumberOfDice::Three => 3,
+            NumberOfDice::Four => 4,
+            NumberOfDice::Five => 5,
+        }
+    }
+
+    fn from_u8(number: u8) -> Self {
+        match number {
+            1 => NumberOfDice::One,
+            2 => NumberOfDice::Two,
+            3 => NumberOfDice::Three,
+            4 => NumberOfDice::Four,
+            _ => NumberOfDice::Five,
+        }
+    }
+}
+
+impl Sub<u8> for NumberOfDice {
+    type Output = Self;
+
+    fn sub(self, number: u8) -> Self::Output {
+        NumberOfDice::from_u8(self.as_u8() - number)
+    }
 }
 
 pub struct Game {
@@ -34,11 +65,6 @@ impl Game {
         if self.dice_left == NumberOfDice::Five {
             let face_value = || self.small_rng.random();
             let dice = Dice::roll(face_value, 5);
-            if dice.sum() < 17 {
-                self.dice_left = NumberOfDice::Four;
-            } else {
-                self.dice_left = NumberOfDice::Three;
-            }
             let mut picks = Vec::new();
             if !self.has_four() && dice.has(FaceValue::Four) {
                 picks.push(Die::new(FaceValue::Four));
@@ -46,7 +72,16 @@ impl Game {
             if !self.has_two() && dice.has(FaceValue::Two) {
                 picks.push(Die::new(FaceValue::Two));
             }
+            if has(&picks, FaceValue::Four)
+                && has(&picks, FaceValue::Two)
+                && dice.has(FaceValue::Six)
+            {
+                picks.push(Die::new(FaceValue::Six));
+            }
+
             self.rolled = picks;
+
+            self.dice_left = self.dice_left - self.rolled.len() as u8;
         }
     }
 
@@ -72,6 +107,10 @@ impl Game {
     }
 
     fn has(&self, face_value: FaceValue) -> bool {
-        self.rolled.iter().any(|&die| die.value == face_value)
+        has(&self.rolled, face_value)
     }
+}
+
+fn has(dice: &[Die], face_value: FaceValue) -> bool {
+    dice.iter().any(|&die| die.value == face_value)
 }
