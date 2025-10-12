@@ -69,17 +69,14 @@ impl Game {
             let face_value = || self.small_rng.random();
             let dice = Dice::roll(face_value, 5);
             let mut picks = Vec::new();
-            if !self.has_four() && dice.has(FaceValue::Four) {
-                picks.push(Die::new(FaceValue::Four));
+            if !self.has_four() {
+                picks.append(&mut dice.pick(FaceValue::Four, Some(1)));
             }
-            if !self.has_two() && dice.has(FaceValue::Two) {
-                picks.push(Die::new(FaceValue::Two));
+            if !self.has_two() {
+                picks.append(&mut dice.pick(FaceValue::Two, Some(1)));
             }
-            if has(&picks, FaceValue::Four)
-                && has(&picks, FaceValue::Two)
-                && dice.has(FaceValue::Six)
-            {
-                picks.push(Die::new(FaceValue::Six));
+            if has(&picks, FaceValue::Four) && has(&picks, FaceValue::Two) {
+                picks.append(&mut dice.pick(FaceValue::Six, None));
             }
 
             self.rolled = picks;

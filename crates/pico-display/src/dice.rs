@@ -25,8 +25,14 @@ impl Dice {
         Dice { dice }
     }
 
-    pub fn has(&self, face_value: FaceValue) -> bool {
-        self.dice.iter().any(|&die| die.value == face_value)
+    pub fn pick(&self, face_value: FaceValue, max_hits: Option<usize>) -> Vec<Die> {
+        let max_hits = max_hits.unwrap_or(self.dice.len());
+        self.dice
+            .iter()
+            .filter(|&die| die.value == face_value)
+            .take(max_hits)
+            .cloned()
+            .collect()
     }
 
     pub fn draw<T>(&self, target: &mut T) -> Result<(), T::Error>
