@@ -126,6 +126,7 @@ impl Game {
         if has(&picked, FaceValue::Four) && has(&picked, FaceValue::Two) {
             picked.append(&mut dice.pick(FaceValue::Six, None));
         }
+        // at least one die needs to be picked
         if self.dice_left == (NumberOfDice::Five - picked.len() as u8) {
             // there must be a max value since dice were rolled
             picked.push(dice.max().unwrap());
@@ -152,7 +153,8 @@ impl Game {
         self.picked
             .iter()
             .fold(0, |acc, &die| acc + die.value.as_u8()) as i8
-            - 6
+            - NumberOfDice::Four.as_u8() as i8
+            - NumberOfDice::Two.as_u8() as i8
     }
 
     fn has_fish(&self) -> bool {

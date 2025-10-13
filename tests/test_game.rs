@@ -45,7 +45,7 @@ mod tests {
 
     #[rstest]
     #[test_log::test]
-    fn test_roll_one_to_five_number_of_dice(
+    fn test_play_game(
         #[from(init_display)] mut display: Display,
         #[from(gen_small_rng)] small_rng: SmallRng,
     ) -> Result<(), Infallible> {
