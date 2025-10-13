@@ -1,14 +1,40 @@
+use crate::aliases::Display;
 use crate::dice::Dice;
 use crate::die::{Die, FaceValue};
+use core::fmt;
 use core::ops::Sub;
+use embedded_graphics::pixelcolor::BinaryColor;
 use rand::rngs::SmallRng;
 use rand::Rng;
 
 extern crate alloc;
 use alloc::vec::Vec;
 
+pub trait Delay {
+    fn delay_ms(&mut self, ms: u32);
+}
+
+impl Delay for cortex_m::delay::Delay {
+    fn delay_ms(&mut self, ms: u32) {
+        self.delay_ms(ms);
+    }
+}
+
+impl fmt::Display for NumberOfDice {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            NumberOfDice::Zero => "Zero",
+            NumberOfDice::One => "One",
+            NumberOfDice::Two => "Two",
+            NumberOfDice::Three => "Three",
+            NumberOfDice::Four => "Four",
+            NumberOfDice::Five => "Five",
+        })
+    }
+}
+
 #[derive(PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
-enum NumberOfDice {
+pub enum NumberOfDice {
     Zero,
     One,
     Two,
@@ -50,10 +76,10 @@ impl Sub<u8> for NumberOfDice {
 }
 
 pub struct Game {
-    dice_left: NumberOfDice,
+    pub dice_left: NumberOfDice,
     small_rng: SmallRng,
-    picked: Vec<Die>,
-    rolled: Option<Dice>,
+    pub picked: Vec<Die>,
+    pub rolled: Dice,
 }
 
 impl Game {
@@ -62,23 +88,35 @@ impl Game {
             dice_left: NumberOfDice::Five,
             small_rng,
             picked: Vec::new(),
-            rolled: None,
+            rolled: Dice::empty(),
         }
     }
 
-    pub fn play(&mut self) {
+    pub fn play<DI, DE>(&mut self, mut delay: DE, display: &mut DI) -> Result<(), DI::Error>
+    where
+        DI: Display,
+        DE: Delay,
+    {
         while self.dice_left > NumberOfDice::Zero {
+            display.clear(BinaryColor::Off)?;
             self.roll();
+            self.rolled.draw(display)?;
+            //display.flush().unwrap();
+            delay.delay_ms(5000);
         }
+        Ok(())
     }
 
-    fn roll(&mut self) {
+    pub fn roll(&mut self) {
         if self.dice_left == NumberOfDice::Zero {
             return;
         }
         let face_value = || self.small_rng.random();
         let dice = Dice::roll(face_value, self.dice_left.as_u8() as u32);
+
         let mut picked = Vec::new();
+        picked.append(&mut self.picked);
+
         if !self.has_four() {
             picked.append(&mut dice.pick(FaceValue::Four, Some(1)));
         }
@@ -88,15 +126,15 @@ impl Game {
         if has(&picked, FaceValue::Four) && has(&picked, FaceValue::Two) {
             picked.append(&mut dice.pick(FaceValue::Six, None));
         }
-        if picked.is_empty() {
+        if self.dice_left == (NumberOfDice::Five - picked.len() as u8) {
             // there must be a max value since dice were rolled
             picked.push(dice.max().unwrap());
         }
 
-        self.rolled = Some(dice);
+        self.rolled = dice;
         self.picked = picked;
 
-        self.dice_left = self.dice_left - self.picked.len() as u8;
+        self.dice_left = NumberOfDice::Five - self.picked.len() as u8;
     }
 
     pub fn has_four(&self) -> bool {
@@ -107,13 +145,14 @@ impl Game {
         self.has(FaceValue::Two)
     }
 
-    pub fn score(&self) -> u8 {
+    pub fn score(&self) -> i8 {
         if self.has_fish() {
-            return 0;
+            return -1;
         }
         self.picked
             .iter()
-            .fold(0, |acc, &die| acc + die.value.as_u8())
+            .fold(0, |acc, &die| acc + die.value.as_u8()) as i8
+            - 6
     }
 
     fn has_fish(&self) -> bool {

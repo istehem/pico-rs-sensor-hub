@@ -22,3 +22,7 @@ path = "test_die.rs"
 [[test]]
 name = "test-player"
 path = "test_player.rs"
+
+[[test]]
+name = "test-game"
+path = "test_game.rs"

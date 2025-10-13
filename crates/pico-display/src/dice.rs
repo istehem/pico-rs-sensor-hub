@@ -13,6 +13,10 @@ pub struct Dice {
 }
 
 impl Dice {
+    pub fn empty() -> Self {
+        Dice { dice: Vec::new() }
+    }
+
     pub fn roll<F>(mut face_value: F, number_of_dice: u32) -> Self
     where
         F: FnMut() -> FaceValue,

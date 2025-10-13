@@ -18,3 +18,10 @@ command = "cargo"
 args = [
 	"test", "--target=x86_64-unknown-linux-gnu", "-p", "tests", "--test", "test-player", "--", "--nocapture"
 ]
+
+[tasks.test-game]
+workspace = false
+command = "cargo"
+args = [
+	"test", "--target=x86_64-unknown-linux-gnu", "-p", "tests", "--test", "test-game", "--", "--nocapture"
+]
