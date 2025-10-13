@@ -117,13 +117,13 @@ impl Game {
         let mut picked = Vec::new();
         picked.append(&mut self.picked);
 
-        if !self.has_four() {
+        if !has_four(&picked) {
             picked.append(&mut dice.pick(FaceValue::Four, Some(1)));
         }
-        if !self.has_two() {
+        if !has_two(&picked) {
             picked.append(&mut dice.pick(FaceValue::Two, Some(1)));
         }
-        if has(&picked, FaceValue::Four) && has(&picked, FaceValue::Two) {
+        if !has_fish(&picked) {
             picked.append(&mut dice.pick(FaceValue::Six, None));
         }
         // at least one die needs to be picked
@@ -138,16 +138,8 @@ impl Game {
         self.dice_left = NumberOfDice::Five - self.picked.len() as u8;
     }
 
-    pub fn has_four(&self) -> bool {
-        self.has(FaceValue::Four)
-    }
-
-    pub fn has_two(&self) -> bool {
-        self.has(FaceValue::Two)
-    }
-
     pub fn score(&self) -> i8 {
-        if self.has_fish() {
+        if has_fish(&self.picked) {
             return -1;
         }
         self.picked
@@ -156,14 +148,18 @@ impl Game {
             - NumberOfDice::Four.as_u8() as i8
             - NumberOfDice::Two.as_u8() as i8
     }
+}
 
-    fn has_fish(&self) -> bool {
-        !(self.has_four() && self.has_two())
-    }
+fn has_fish(dice: &[Die]) -> bool {
+    !(has_four(dice) && has_two(dice))
+}
 
-    fn has(&self, face_value: FaceValue) -> bool {
-        has(&self.picked, face_value)
-    }
+fn has_four(dice: &[Die]) -> bool {
+    has(dice, FaceValue::Four)
+}
+
+fn has_two(dice: &[Die]) -> bool {
+    has(dice, FaceValue::Two)
 }
 
 fn has(dice: &[Die], face_value: FaceValue) -> bool {
