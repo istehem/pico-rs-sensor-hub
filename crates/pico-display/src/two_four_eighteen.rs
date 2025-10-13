@@ -52,7 +52,8 @@ impl Sub<u8> for NumberOfDice {
 pub struct Game {
     dice_left: NumberOfDice,
     small_rng: SmallRng,
-    rolled: Vec<Die>,
+    picked: Vec<Die>,
+    rolled: Option<Dice>,
 }
 
 impl Game {
@@ -60,31 +61,42 @@ impl Game {
         Self {
             dice_left: NumberOfDice::Five,
             small_rng,
-            rolled: Vec::new(),
+            picked: Vec::new(),
+            rolled: None,
         }
     }
 
     pub fn play(&mut self) {
+        while self.dice_left > NumberOfDice::Zero {
+            self.roll();
+        }
+    }
+
+    fn roll(&mut self) {
+        if self.dice_left == NumberOfDice::Zero {
+            return;
+        }
         let face_value = || self.small_rng.random();
         let dice = Dice::roll(face_value, self.dice_left.as_u8() as u32);
-        let mut picks = Vec::new();
+        let mut picked = Vec::new();
         if !self.has_four() {
-            picks.append(&mut dice.pick(FaceValue::Four, Some(1)));
+            picked.append(&mut dice.pick(FaceValue::Four, Some(1)));
         }
         if !self.has_two() {
-            picks.append(&mut dice.pick(FaceValue::Two, Some(1)));
+            picked.append(&mut dice.pick(FaceValue::Two, Some(1)));
         }
-        if has(&picks, FaceValue::Four) && has(&picks, FaceValue::Two) {
-            picks.append(&mut dice.pick(FaceValue::Six, None));
+        if has(&picked, FaceValue::Four) && has(&picked, FaceValue::Two) {
+            picked.append(&mut dice.pick(FaceValue::Six, None));
         }
-        if picks.is_empty() {
+        if picked.is_empty() {
             // there must be a max value since dice were rolled
-            picks.push(dice.max().unwrap());
+            picked.push(dice.max().unwrap());
         }
 
-        self.rolled = picks;
+        self.rolled = Some(dice);
+        self.picked = picked;
 
-        self.dice_left = self.dice_left - self.rolled.len() as u8;
+        self.dice_left = self.dice_left - self.picked.len() as u8;
     }
 
     pub fn has_four(&self) -> bool {
@@ -99,7 +111,7 @@ impl Game {
         if self.has_fish() {
             return 0;
         }
-        self.rolled
+        self.picked
             .iter()
             .fold(0, |acc, &die| acc + die.value.as_u8())
     }
@@ -109,7 +121,7 @@ impl Game {
     }
 
     fn has(&self, face_value: FaceValue) -> bool {
-        has(&self.rolled, face_value)
+        has(&self.picked, face_value)
     }
 }
 
