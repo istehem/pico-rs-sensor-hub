@@ -1,9 +1,7 @@
-use crate::aliases::Display;
 use crate::dice::Dice;
 use crate::die::{Die, FaceValue};
 use core::fmt;
 use core::ops::Sub;
-use embedded_graphics::pixelcolor::BinaryColor;
 use rand::rngs::SmallRng;
 use rand::Rng;
 
@@ -77,7 +75,7 @@ impl Sub<u8> for NumberOfDice {
 
 pub struct Game {
     pub dice_left: NumberOfDice,
-    small_rng: SmallRng,
+    pub small_rng: SmallRng,
     pub picked: Vec<Die>,
     pub rolled: Dice,
 }
@@ -90,21 +88,6 @@ impl Game {
             picked: Vec::new(),
             rolled: Dice::empty(),
         }
-    }
-
-    pub fn play<DI, DE>(&mut self, mut delay: DE, display: &mut DI) -> Result<(), DI::Error>
-    where
-        DI: Display,
-        DE: Delay,
-    {
-        while self.dice_left > NumberOfDice::Zero {
-            display.clear(BinaryColor::Off)?;
-            self.roll();
-            self.rolled.draw(display)?;
-            //display.flush().unwrap();
-            delay.delay_ms(5000);
-        }
-        Ok(())
     }
 
     pub fn roll(&mut self) {

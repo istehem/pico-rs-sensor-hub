@@ -14,7 +14,7 @@ use embedded_graphics::pixelcolor::BinaryColor;
 use rand::rngs::SmallRng;
 use rand::SeedableRng;
 
-use pico_display::player;
+use pico_display::two_four_eighteen::{Game, NumberOfDice};
 
 // Provide an alias for our BSP so we can switch targets quickly.
 // Uncomment the BSP you included in Cargo.toml, the rest of the code does not need to change.
@@ -39,6 +39,9 @@ use embedded_alloc::LlffHeap;
 
 #[global_allocator]
 static HEAP: LlffHeap = LlffHeap::empty();
+
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 
 #[entry]
 fn main() -> ! {
@@ -104,10 +107,28 @@ fn main() -> ! {
 
     let mut small_rng = SmallRng::seed_from_u64(12345);
     loop {
-        info!("rolling!");
-        display.clear(BinaryColor::Off).unwrap();
-        small_rng = player::roll_one_to_five_number_of_dice(&mut display, small_rng).unwrap();
-        display.flush().unwrap();
-        delay.delay_ms(5000);
+        info!("Starting new game!");
+
+        let mut game = Game::new(small_rng.clone());
+
+        while game.dice_left > NumberOfDice::Zero {
+            display.clear(BinaryColor::Off).unwrap();
+            game.roll();
+            game.rolled.draw(&mut display).unwrap();
+
+            info!("current score: {}", game.score());
+
+            display.flush().unwrap();
+            delay.delay_ms(5000);
+        }
+        let mut picked: Vec<String> = game
+            .picked
+            .iter()
+            .map(|die| die.value.as_u8().to_string())
+            .collect();
+        picked.sort();
+        info!("picked: {}", picked.join(",").as_str());
+        info!("final score: {}", game.score());
+        small_rng = game.small_rng;
     }
 }
