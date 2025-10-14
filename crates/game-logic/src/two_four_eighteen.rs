@@ -121,6 +121,14 @@ impl Game {
             - NumberOfDice::Four.as_u8() as i8
             - NumberOfDice::Two.as_u8() as i8
     }
+
+    pub fn has_fish(&self) -> bool {
+        has_fish(&self.picked)
+    }
+
+    pub fn has_won(&self) -> bool {
+        self.score() == 18
+    }
 }
 
 fn has_fish(dice: &[Die]) -> bool {

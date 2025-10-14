@@ -14,7 +14,7 @@ embedded-graphics-simulator = "0.7.0"
 rand = { workspace = true, default-features = true }
 pico-display = { path = "../crates/pico-display" }
 game-logic = { path = "../crates/game-logic" }
-
+u8g2-fonts = "0.7.2"
 
 [[test]]
 name = "test-die"
