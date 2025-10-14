@@ -1,5 +1,5 @@
-use rand::rngs::SmallRng;
 use rand::Rng;
+use rand::rngs::SmallRng;
 
 use pico_display::aliases::Display;
 use pico_display::dice::Dice;
