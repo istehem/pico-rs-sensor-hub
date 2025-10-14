@@ -22,7 +22,7 @@ panic-probe = { version = "1", features = ["print-defmt"] }
 rp-pico = "0.9"
 ssd1306 = "0.10.0"
 
-pico-display = { path = "./crates/pico-display" }
+game-logic = { path = "./crates/game-logic" }
 embedded-graphics = { workspace = true }
 rand = { workspace = true }
 embedded-alloc = "0.6.0"

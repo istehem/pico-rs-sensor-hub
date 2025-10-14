@@ -14,7 +14,7 @@ use embedded_graphics::pixelcolor::BinaryColor;
 use rand::rngs::SmallRng;
 use rand::SeedableRng;
 
-use pico_display::two_four_eighteen::{Game, NumberOfDice};
+use game_logic::two_four_eighteen::{Game, NumberOfDice};
 
 // Provide an alias for our BSP so we can switch targets quickly.
 // Uncomment the BSP you included in Cargo.toml, the rest of the code does not need to change.

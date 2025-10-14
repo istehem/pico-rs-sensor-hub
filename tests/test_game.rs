@@ -3,8 +3,8 @@ mod tests {
     use rand;
     use rstest::{fixture, rstest};
 
-    use pico_display::two_four_eighteen::Game;
-    use pico_display::two_four_eighteen::NumberOfDice;
+    use game_logic::two_four_eighteen::Game;
+    use game_logic::two_four_eighteen::NumberOfDice;
 
     use core::convert::Infallible;
     use embedded_graphics::{pixelcolor::BinaryColor, prelude::*};

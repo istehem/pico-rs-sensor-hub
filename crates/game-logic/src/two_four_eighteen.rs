@@ -1,22 +1,12 @@
-use crate::dice::Dice;
-use crate::die::{Die, FaceValue};
 use core::fmt;
 use core::ops::Sub;
-use rand::rngs::SmallRng;
+use pico_display::dice::Dice;
+use pico_display::die::{Die, FaceValue};
 use rand::Rng;
+use rand::rngs::SmallRng;
 
 extern crate alloc;
 use alloc::vec::Vec;
-
-pub trait Delay {
-    fn delay_ms(&mut self, ms: u32);
-}
-
-impl Delay for cortex_m::delay::Delay {
-    fn delay_ms(&mut self, ms: u32) {
-        self.delay_ms(ms);
-    }
-}
 
 impl fmt::Display for NumberOfDice {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
