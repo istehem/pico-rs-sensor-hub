@@ -1,8 +1,8 @@
 use rand::rngs::SmallRng;
 use rand::Rng;
 
-use crate::aliases::Display;
-use crate::dice::Dice;
+use pico_display::aliases::Display;
+use pico_display::dice::Dice;
 
 pub fn roll_die<T>(target: &mut T, mut small_rng: SmallRng) -> Result<SmallRng, T::Error>
 where

@@ -3,7 +3,7 @@ mod tests {
     use rand;
     use rstest::{fixture, rstest};
 
-    use pico_display::player;
+    use game_logic::player;
 
     use core::convert::Infallible;
     use embedded_graphics::{pixelcolor::BinaryColor, prelude::*};
