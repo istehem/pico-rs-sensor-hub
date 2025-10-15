@@ -5,6 +5,7 @@ mod tests {
 
     use game_logic::two_four_eighteen::Game;
     use game_logic::two_four_eighteen::NumberOfDice;
+    use pico_display::messages;
 
     use core::convert::Infallible;
 
@@ -13,9 +14,6 @@ mod tests {
         OutputSettingsBuilder, SimulatorDisplay, SimulatorEvent, Window,
     };
     use tracing::info;
-    use u8g2_fonts::fonts::u8g2_font_logisoso22_tr;
-    use u8g2_fonts::types::{FontColor, HorizontalAlignment, VerticalPosition};
-    use u8g2_fonts::FontRenderer;
 
     use rand::rngs::SmallRng;
     use rand::SeedableRng;
@@ -84,42 +82,15 @@ mod tests {
         info!("final score: {}", score);
         display.clear(BinaryColor::Off)?;
         if game.has_fish() {
-            let font = FontRenderer::new::<u8g2_font_logisoso22_tr>();
-            font.render_aligned(
-                "Fish!",
-                display.bounding_box().center(),
-                VerticalPosition::Center,
-                HorizontalAlignment::Center,
-                FontColor::Transparent(BinaryColor::On),
-                &mut display,
-            )
-            .unwrap();
+            messages::big_centered_message("Fish!", &mut display).unwrap();
             window.update(&display);
             thread::sleep(Duration::from_secs(5));
         } else if game.has_won() {
-            let font = FontRenderer::new::<u8g2_font_logisoso22_tr>();
-            font.render_aligned(
-                "18! You Win!",
-                display.bounding_box().center(),
-                VerticalPosition::Center,
-                HorizontalAlignment::Center,
-                FontColor::Transparent(BinaryColor::On),
-                &mut display,
-            )
-            .unwrap();
+            messages::big_centered_message("18! You Win!", &mut display).unwrap();
             window.update(&display);
             thread::sleep(Duration::from_secs(5));
         } else {
-            let font = FontRenderer::new::<u8g2_font_logisoso22_tr>();
-            font.render_aligned(
-                score.to_string().as_str(),
-                display.bounding_box().center(),
-                VerticalPosition::Center,
-                HorizontalAlignment::Center,
-                FontColor::Transparent(BinaryColor::On),
-                &mut display,
-            )
-            .unwrap();
+            messages::big_centered_message(score.to_string().as_str(), &mut display).unwrap();
             window.update(&display);
             thread::sleep(Duration::from_secs(5));
         }
