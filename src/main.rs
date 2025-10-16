@@ -15,6 +15,7 @@ use rand::rngs::SmallRng;
 use rand::SeedableRng;
 
 use game_logic::two_four_eighteen::{Game, NumberOfDice};
+use pico_display::messages;
 
 // Provide an alias for our BSP so we can switch targets quickly.
 // Uncomment the BSP you included in Cargo.toml, the rest of the code does not need to change.
@@ -128,7 +129,18 @@ fn main() -> ! {
             .collect();
         picked.sort();
         info!("picked: {}", picked.join(",").as_str());
-        info!("final score: {}", game.score());
+        let score = game.score();
+        info!("final score: {}", score);
+        display.clear(BinaryColor::Off).unwrap();
+        if game.has_fish() {
+            messages::big_centered_message("Fish!", &mut display).unwrap();
+        } else if game.has_won() {
+            messages::big_centered_message("18!\nYou Win!", &mut display).unwrap();
+        } else {
+            messages::big_centered_message(score.to_string().as_str(), &mut display).unwrap();
+        }
+        display.flush().unwrap();
+        delay.delay_ms(5000);
         small_rng = game.small_rng;
     }
 }

@@ -83,17 +83,13 @@ mod tests {
         display.clear(BinaryColor::Off)?;
         if game.has_fish() {
             messages::big_centered_message("Fish!", &mut display).unwrap();
-            window.update(&display);
-            thread::sleep(Duration::from_secs(5));
         } else if game.has_won() {
             messages::big_centered_message("18! You Win!", &mut display).unwrap();
-            window.update(&display);
-            thread::sleep(Duration::from_secs(5));
         } else {
             messages::big_centered_message(score.to_string().as_str(), &mut display).unwrap();
-            window.update(&display);
-            thread::sleep(Duration::from_secs(5));
         }
+        window.update(&display);
+        thread::sleep(Duration::from_secs(5));
         Ok(())
     }
 }

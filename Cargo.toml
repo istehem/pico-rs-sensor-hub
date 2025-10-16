@@ -21,6 +21,7 @@ rp-pico = "0.9"
 ssd1306 = "0.10.0"
 
 game-logic = { path = "./crates/game-logic" }
+pico-display = { path = "./crates/pico-display" }
 embedded-graphics = { workspace = true }
 rand = { workspace = true }
 embedded-alloc = "0.6.0"
