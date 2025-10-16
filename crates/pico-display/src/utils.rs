@@ -1,3 +1,4 @@
+#![cfg_attr(not(test), allow(unused_imports))]
 use num_traits::float::FloatCore;
 
 pub fn percent_of(number: u32, percent: u32) -> u32 {
