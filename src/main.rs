@@ -28,11 +28,13 @@ use bsp::hal::{
     gpio,
     pac,
     // needed to handle irq interrupts
-    // pac::interrupt,
+    pac::interrupt,
     sio::Sio,
     watchdog::Watchdog,
     I2C,
 };
+
+use crate::gpio::Interrupt;
 
 extern crate alloc;
 
@@ -106,6 +108,11 @@ fn main() -> ! {
     let mut led_pin = pins.led.into_push_pull_output();
     led_pin.set_high().unwrap();
 
+    // enbale IRQ for the pin connected the IR sensor in connected to.
+    // let mut gpio21 = pins.gpio21.into_pull_up_input();
+    let gpio21 = pins.gpio21.into_pull_up_input();
+    gpio21.set_interrupt_enabled(Interrupt::EdgeHigh, true);
+
     let mut small_rng = SmallRng::seed_from_u64(12345);
     loop {
         info!("Starting new game!");
@@ -144,3 +151,6 @@ fn main() -> ! {
         small_rng = game.small_rng;
     }
 }
+
+#[interrupt]
+fn IO_IRQ_BANK0() {}
