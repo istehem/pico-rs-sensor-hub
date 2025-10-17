@@ -25,6 +25,7 @@ pico-display = { path = "./crates/pico-display" }
 embedded-graphics = { workspace = true }
 rand = { workspace = true }
 embedded-alloc = "0.6.0"
+critical-section = "1.2.0"
 
 [workspace.dependencies]
 embedded-graphics = "0.8.1"

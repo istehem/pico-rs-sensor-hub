@@ -2,6 +2,8 @@
 #![no_main]
 
 use bsp::entry;
+use core::cell::RefCell;
+use critical_section::Mutex;
 use defmt::info;
 use defmt_rtt as _;
 use embedded_hal::digital::OutputPin;
@@ -40,11 +42,15 @@ extern crate alloc;
 
 use embedded_alloc::LlffHeap;
 
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
+
 #[global_allocator]
 static HEAP: LlffHeap = LlffHeap::empty();
 
-use alloc::string::{String, ToString};
-use alloc::vec::Vec;
+type IrBreakBeamPin = Option<gpio::Pin<gpio::bank0::Gpio21, gpio::FunctionSioInput, gpio::PullUp>>;
+
+static IR_BREAK_BEAM: Mutex<RefCell<IrBreakBeamPin>> = Mutex::new(RefCell::new(None));
 
 #[entry]
 fn main() -> ! {
@@ -108,10 +114,13 @@ fn main() -> ! {
     let mut led_pin = pins.led.into_push_pull_output();
     led_pin.set_high().unwrap();
 
-    // enbale IRQ for the pin connected the IR sensor in connected to.
-    // let mut gpio21 = pins.gpio21.into_pull_up_input();
+    // enable IRQ for the GPIO pin the IR sensor in connected to.
     let gpio21 = pins.gpio21.into_pull_up_input();
-    gpio21.set_interrupt_enabled(Interrupt::EdgeHigh, true);
+    gpio21.set_interrupt_enabled(Interrupt::EdgeLow, true);
+
+    critical_section::with(|cs| {
+        IR_BREAK_BEAM.borrow(cs).replace(Some(gpio21));
+    });
 
     let mut small_rng = SmallRng::seed_from_u64(12345);
     loop {
@@ -153,4 +162,22 @@ fn main() -> ! {
 }
 
 #[interrupt]
-fn IO_IRQ_BANK0() {}
+fn IO_IRQ_BANK0() {
+    static mut IR_BREAK_BEAM_PIN: IrBreakBeamPin = None;
+
+    // Initialize the static with the pin from the global
+    if IR_BREAK_BEAM_PIN.is_none() {
+        critical_section::with(|cs| {
+            *IR_BREAK_BEAM_PIN = IR_BREAK_BEAM.borrow(cs).take();
+        });
+    }
+
+    // Check and handle the interrupt
+    if let Some(pin) = IR_BREAK_BEAM_PIN {
+        if pin.interrupt_status(Interrupt::EdgeLow) {
+            info!("Beam broken!");
+            // Always clear the interrupt flag
+            pin.clear_interrupt(Interrupt::EdgeLow);
+        }
+    }
+}
