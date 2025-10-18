@@ -172,17 +172,24 @@ fn IO_IRQ_BANK0() {
     static mut IR_BREAK_BEAM_PIN: IrBreakBeamPin = None;
     static mut ON_BOARD_LED_PIN: OnBoardLed = None;
 
-    critical_section::with(|cs| {
-        *IR_BREAK_BEAM_PIN = IR_BREAK_BEAM.borrow(cs).take();
-        *ON_BOARD_LED_PIN = ON_BOARD_LED.borrow(cs).take();
-    });
+    if IR_BREAK_BEAM_PIN.is_none() {
+        critical_section::with(|cs| {
+            *IR_BREAK_BEAM_PIN = IR_BREAK_BEAM.borrow(cs).take();
+        });
+    }
+
+    if ON_BOARD_LED_PIN.is_none() {
+        critical_section::with(|cs| {
+            *ON_BOARD_LED_PIN = ON_BOARD_LED.borrow(cs).take();
+        });
+    }
 
     // Check and handle the interrupt
-    if let Some(pin) = IR_BREAK_BEAM_PIN {
-        if pin.interrupt_status(Interrupt::EdgeLow) {
+    if let Some(beam_pin) = IR_BREAK_BEAM_PIN {
+        if beam_pin.interrupt_status(Interrupt::EdgeLow) {
             info!("Beam broken!");
             // Always clear the interrupt flag
-            pin.clear_interrupt(Interrupt::EdgeLow);
+            beam_pin.clear_interrupt(Interrupt::EdgeLow);
 
             if let Some(led_pin) = ON_BOARD_LED_PIN {
                 led_pin.toggle().unwrap();
