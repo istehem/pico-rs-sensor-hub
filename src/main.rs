@@ -7,6 +7,7 @@ use critical_section::Mutex;
 use defmt::info;
 use defmt_rtt as _;
 use embedded_hal::digital::OutputPin;
+use embedded_hal::digital::StatefulOutputPin;
 use panic_probe as _;
 use ssd1306::mode::DisplayConfig;
 use ssd1306::{rotation::DisplayRotation, size::DisplaySize128x64, I2CDisplayInterface, Ssd1306};
@@ -36,6 +37,7 @@ use bsp::hal::{
     I2C,
 };
 
+use crate::gpio::FunctionSio;
 use crate::gpio::Interrupt;
 
 extern crate alloc;
@@ -49,8 +51,11 @@ use alloc::vec::Vec;
 static HEAP: LlffHeap = LlffHeap::empty();
 
 type IrBreakBeamPin = Option<gpio::Pin<gpio::bank0::Gpio21, gpio::FunctionSioInput, gpio::PullUp>>;
+type OnBoardLed =
+    Option<gpio::Pin<gpio::bank0::Gpio25, FunctionSio<gpio::SioOutput>, gpio::PullDown>>;
 
 static IR_BREAK_BEAM: Mutex<RefCell<IrBreakBeamPin>> = Mutex::new(RefCell::new(None));
+static ON_BOARD_LED: Mutex<RefCell<OnBoardLed>> = Mutex::new(RefCell::new(None));
 
 #[entry]
 fn main() -> ! {
@@ -112,7 +117,7 @@ fn main() -> ! {
     display.init().unwrap();
 
     let mut led_pin = pins.led.into_push_pull_output();
-    led_pin.set_high().unwrap();
+    led_pin.set_low().unwrap();
 
     // enable IRQ for the GPIO pin the IR sensor in connected to.
     let gpio21 = pins.gpio21.into_pull_up_input();
@@ -120,6 +125,7 @@ fn main() -> ! {
 
     critical_section::with(|cs| {
         IR_BREAK_BEAM.borrow(cs).replace(Some(gpio21));
+        ON_BOARD_LED.borrow(cs).replace(Some(led_pin));
     });
 
     let mut small_rng = SmallRng::seed_from_u64(12345);
@@ -164,13 +170,12 @@ fn main() -> ! {
 #[interrupt]
 fn IO_IRQ_BANK0() {
     static mut IR_BREAK_BEAM_PIN: IrBreakBeamPin = None;
+    static mut ON_BOARD_LED_PIN: OnBoardLed = None;
 
-    // Initialize the static with the pin from the global
-    if IR_BREAK_BEAM_PIN.is_none() {
-        critical_section::with(|cs| {
-            *IR_BREAK_BEAM_PIN = IR_BREAK_BEAM.borrow(cs).take();
-        });
-    }
+    critical_section::with(|cs| {
+        *IR_BREAK_BEAM_PIN = IR_BREAK_BEAM.borrow(cs).take();
+        *ON_BOARD_LED_PIN = ON_BOARD_LED.borrow(cs).take();
+    });
 
     // Check and handle the interrupt
     if let Some(pin) = IR_BREAK_BEAM_PIN {
@@ -178,6 +183,10 @@ fn IO_IRQ_BANK0() {
             info!("Beam broken!");
             // Always clear the interrupt flag
             pin.clear_interrupt(Interrupt::EdgeLow);
+
+            if let Some(led_pin) = ON_BOARD_LED_PIN {
+                led_pin.toggle().unwrap();
+            }
         }
     }
 }
