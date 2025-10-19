@@ -10,7 +10,10 @@ use embedded_hal::digital::OutputPin;
 use embedded_hal::digital::StatefulOutputPin;
 use panic_probe as _;
 use ssd1306::mode::DisplayConfig;
-use ssd1306::{rotation::DisplayRotation, size::DisplaySize128x64, I2CDisplayInterface, Ssd1306};
+use ssd1306::{
+    mode::BufferedGraphicsMode, prelude::I2CInterface, rotation::DisplayRotation,
+    size::DisplaySize128x64, I2CDisplayInterface, Ssd1306,
+};
 
 use embedded_graphics::draw_target::DrawTarget;
 use embedded_graphics::pixelcolor::BinaryColor;
@@ -35,6 +38,8 @@ use bsp::hal::{
     I2C,
 };
 
+use crate::gpio::bank0::Gpio6;
+use crate::gpio::bank0::Gpio7;
 use crate::gpio::FunctionSio;
 use crate::gpio::Interrupt;
 
@@ -51,6 +56,15 @@ static HEAP: LlffHeap = LlffHeap::empty();
 type IrBreakBeamPin = Option<gpio::Pin<gpio::bank0::Gpio21, gpio::FunctionSioInput, gpio::PullUp>>;
 type OnBoardLed =
     Option<gpio::Pin<gpio::bank0::Gpio25, FunctionSio<gpio::SioOutput>, gpio::PullDown>>;
+type I2CConfig = I2C<
+    pac::I2C1,
+    (
+        gpio::Pin<Gpio6, gpio::FunctionI2C, gpio::PullUp>,
+        gpio::Pin<Gpio7, gpio::FunctionI2C, gpio::PullUp>,
+    ),
+>;
+type Display =
+    Ssd1306<I2CInterface<I2CConfig>, DisplaySize128x64, BufferedGraphicsMode<DisplaySize128x64>>;
 
 static IR_BREAK_BEAM: Mutex<RefCell<IrBreakBeamPin>> = Mutex::new(RefCell::new(None));
 static ON_BOARD_LED: Mutex<RefCell<OnBoardLed>> = Mutex::new(RefCell::new(None));
@@ -99,7 +113,7 @@ fn main() -> ! {
         .into_pull_up_input()
         .into_function::<gpio::FunctionI2C>();
 
-    let i2c = I2C::i2c1(
+    let i2c: I2CConfig = I2C::i2c1(
         pac.I2C1,
         sda_pin,
         scl_pin,
@@ -109,7 +123,7 @@ fn main() -> ! {
     );
 
     let interface = I2CDisplayInterface::new(i2c);
-    let mut display = Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
+    let mut display: Display = Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
         .into_buffered_graphics_mode();
 
     display.init().unwrap();
