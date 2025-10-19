@@ -118,7 +118,7 @@ fn main() -> ! {
     let mut led_pin = pins.led.into_push_pull_output();
     led_pin.set_low().unwrap();
 
-    // enable IRQ for the GPIO pin the IR sensor in connected to.
+    // enable IRQ for the GPIO pin the IR sensor is connected to.
     let gpio21 = pins.gpio21.into_pull_up_input();
     gpio21.set_interrupt_enabled(Interrupt::EdgeLow, true);
 
