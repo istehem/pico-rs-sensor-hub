@@ -30,7 +30,6 @@ use bsp::hal::{
     fugit::RateExtU32,
     gpio,
     pac,
-    // needed to handle irq interrupts
     pac::interrupt,
     sio::Sio,
     watchdog::Watchdog,
