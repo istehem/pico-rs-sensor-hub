@@ -28,8 +28,7 @@ use rp_pico as bsp;
 use bsp::hal::{
     clocks::{init_clocks_and_plls, Clock},
     fugit::RateExtU32,
-    gpio,
-    pac,
+    gpio, pac,
     pac::interrupt,
     sio::Sio,
     watchdog::Watchdog,
