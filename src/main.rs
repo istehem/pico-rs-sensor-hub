@@ -127,6 +127,9 @@ fn main() -> ! {
         IR_BREAK_BEAM.borrow(cs).replace(Some(gpio21));
         ON_BOARD_LED.borrow(cs).replace(Some(led_pin));
     });
+    unsafe {
+        pac::NVIC::unmask(pac::Interrupt::IO_IRQ_BANK0); // Unmask NVIC interrupt
+    }
 
     let mut small_rng = SmallRng::seed_from_u64(12345);
     loop {
