@@ -80,6 +80,12 @@ impl Game {
         }
     }
 
+    pub fn reset(&mut self) {
+        self.dice_left = NumberOfDice::Five;
+        self.picked = Vec::new();
+        self.rolled = Dice::empty();
+    }
+
     pub fn roll(&mut self) {
         if self.dice_left == NumberOfDice::Zero {
             return;
