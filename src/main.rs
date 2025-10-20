@@ -29,13 +29,8 @@ use rp_pico as bsp;
 // use sparkfun_pro_micro_rp2040 as bsp;
 
 use bsp::hal::{
-    clocks::{init_clocks_and_plls, Clock},
-    fugit::RateExtU32,
-    gpio, pac,
-    pac::interrupt,
-    sio::Sio,
-    watchdog::Watchdog,
-    I2C,
+    clocks::init_clocks_and_plls, fugit::RateExtU32, gpio, pac, pac::interrupt, sio::Sio,
+    watchdog::Watchdog, I2C,
 };
 
 use crate::gpio::bank0::Gpio6;
@@ -80,7 +75,6 @@ fn main() -> ! {
     }
 
     let mut pac = pac::Peripherals::take().unwrap();
-    let core = pac::CorePeripherals::take().unwrap();
     let mut watchdog = Watchdog::new(pac.WATCHDOG);
     let sio = Sio::new(pac.SIO);
 
@@ -97,8 +91,6 @@ fn main() -> ! {
     )
     .ok()
     .unwrap();
-
-    let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
 
     let pins = bsp::Pins::new(
         pac.IO_BANK0,
@@ -141,7 +133,7 @@ fn main() -> ! {
     critical_section::with(|cs| {
         IR_BREAK_BEAM.borrow(cs).replace(Some(gpio21));
         ON_BOARD_LED.borrow(cs).replace(Some(led_pin));
-        //DISPLAY.borrow(cs).replace(Some(display));
+        DISPLAY.borrow(cs).replace(Some(display));
         GAME.borrow(cs)
             .replace(Some(Game::new(SmallRng::seed_from_u64(12345))));
     });
@@ -149,42 +141,8 @@ fn main() -> ! {
         pac::NVIC::unmask(pac::Interrupt::IO_IRQ_BANK0); // Unmask NVIC interrupt
     }
 
-    let mut small_rng = SmallRng::seed_from_u64(12345);
     loop {
-        info!("Starting new game!");
-
-        let mut game = Game::new(small_rng.clone());
-
-        while game.dice_left > NumberOfDice::Zero {
-            display.clear(BinaryColor::Off).unwrap();
-            game.roll();
-            game.rolled.draw(&mut display).unwrap();
-
-            info!("current score: {}", game.score());
-
-            display.flush().unwrap();
-            delay.delay_ms(5000);
-        }
-        let mut picked: Vec<String> = game
-            .picked
-            .iter()
-            .map(|die| die.value.as_u8().to_string())
-            .collect();
-        picked.sort();
-        info!("picked: {}", picked.join(",").as_str());
-        let score = game.score();
-        info!("final score: {}", score);
-        display.clear(BinaryColor::Off).unwrap();
-        if game.has_fish() {
-            messages::big_centered_message("Fish!", &mut display).unwrap();
-        } else if game.has_won() {
-            messages::big_centered_message("18!\nYou Win!", &mut display).unwrap();
-        } else {
-            messages::big_centered_message(score.to_string().as_str(), &mut display).unwrap();
-        }
-        display.flush().unwrap();
-        delay.delay_ms(5000);
-        small_rng = game.small_rng;
+        cortex_m::asm::wfi();
     }
 }
 
@@ -213,6 +171,12 @@ fn IO_IRQ_BANK0() {
         });
     }
 
+    if GAME_IN_IRQ.is_none() {
+        critical_section::with(|cs| {
+            *GAME_IN_IRQ = GAME.borrow(cs).take();
+        });
+    }
+
     // Check and handle the interrupt
     if let Some(beam_pin) = IR_BREAK_BEAM_PIN {
         if beam_pin.interrupt_status(Interrupt::EdgeLow) {
@@ -225,8 +189,31 @@ fn IO_IRQ_BANK0() {
             }
             if let (Some(display), Some(game)) = (DISPLAY_IN_IRQ, GAME_IN_IRQ) {
                 display.clear(BinaryColor::Off).unwrap();
-                game.roll();
-                game.rolled.draw(display).unwrap();
+                if game.dice_left > NumberOfDice::Zero {
+                    game.roll();
+                    game.rolled.draw(display).unwrap();
+                    info!("current score: {}", game.score());
+                } else {
+                    let mut picked: Vec<String> = game
+                        .picked
+                        .iter()
+                        .map(|die| die.value.as_u8().to_string())
+                        .collect();
+                    picked.sort();
+                    info!("picked: {}", picked.join(",").as_str());
+                    let score = game.score();
+                    info!("final score: {}", score);
+                    display.clear(BinaryColor::Off).unwrap();
+                    if game.has_fish() {
+                        messages::big_centered_message("Fish!", display).unwrap();
+                    } else if game.has_won() {
+                        messages::big_centered_message("18!\nYou Win!", display).unwrap();
+                    } else {
+                        messages::big_centered_message(score.to_string().as_str(), display)
+                            .unwrap();
+                    }
+                    game.reset();
+                }
                 display.flush().unwrap();
             }
         }
