@@ -70,6 +70,7 @@ type Display = Option<
 static IR_BREAK_BEAM: Mutex<RefCell<IrBreakBeamPin>> = Mutex::new(RefCell::new(None));
 static ON_BOARD_LED: Mutex<RefCell<OnBoardLed>> = Mutex::new(RefCell::new(None));
 static DISPLAY: Mutex<RefCell<Display>> = Mutex::new(RefCell::new(None));
+static GAME: Mutex<RefCell<Option<Game>>> = Mutex::new(RefCell::new(None));
 
 #[entry]
 fn main() -> ! {
@@ -140,6 +141,9 @@ fn main() -> ! {
     critical_section::with(|cs| {
         IR_BREAK_BEAM.borrow(cs).replace(Some(gpio21));
         ON_BOARD_LED.borrow(cs).replace(Some(led_pin));
+        //DISPLAY.borrow(cs).replace(Some(display));
+        GAME.borrow(cs)
+            .replace(Some(Game::new(SmallRng::seed_from_u64(12345))));
     });
     unsafe {
         pac::NVIC::unmask(pac::Interrupt::IO_IRQ_BANK0); // Unmask NVIC interrupt
@@ -189,6 +193,7 @@ fn IO_IRQ_BANK0() {
     static mut IR_BREAK_BEAM_PIN: IrBreakBeamPin = None;
     static mut ON_BOARD_LED_PIN: OnBoardLed = None;
     static mut DISPLAY_IN_IRQ: Display = None;
+    static mut GAME_IN_IRQ: Option<Game> = None;
 
     if IR_BREAK_BEAM_PIN.is_none() {
         critical_section::with(|cs| {
@@ -218,9 +223,10 @@ fn IO_IRQ_BANK0() {
             if let Some(led_pin) = ON_BOARD_LED_PIN {
                 led_pin.toggle().unwrap();
             }
-            if let Some(display) = DISPLAY_IN_IRQ {
+            if let (Some(display), Some(game)) = (DISPLAY_IN_IRQ, GAME_IN_IRQ) {
                 display.clear(BinaryColor::Off).unwrap();
-                messages::big_centered_message("IRQ!", display).unwrap();
+                game.roll();
+                game.rolled.draw(display).unwrap();
                 display.flush().unwrap();
             }
         }
