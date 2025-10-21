@@ -187,18 +187,21 @@ fn IO_IRQ_BANK0() {
                 led_pin.toggle().unwrap();
             }
             if let (Some(display), Some(game)) = (DISPLAY_IN_IRQ, GAME_IN_IRQ) {
-                play_and_draw(game, display);
+                play_and_draw(game, display).unwrap();
                 display.flush().unwrap();
             }
         }
     }
 }
 
-fn play_and_draw(game: &mut Game, display: &mut Display) {
-    display.clear(BinaryColor::Off).unwrap();
+fn play_and_draw(
+    game: &mut Game,
+    display: &mut Display,
+) -> Result<(), <Display as DrawTarget>::Error> {
+    display.clear(BinaryColor::Off)?;
     if game.dice_left > NumberOfDice::Zero {
         game.roll();
-        game.rolled.draw(display).unwrap();
+        game.rolled.draw(display)?;
         info!("current score: {}", game.score());
     } else {
         let mut picked: Vec<String> = game
@@ -210,7 +213,7 @@ fn play_and_draw(game: &mut Game, display: &mut Display) {
         info!("picked: {}", picked.join(",").as_str());
         let score = game.score();
         info!("final score: {}", score);
-        display.clear(BinaryColor::Off).unwrap();
+        display.clear(BinaryColor::Off)?;
         if game.has_fish() {
             messages::big_centered_message("Fish!", display).unwrap();
         } else if game.has_won() {
@@ -220,4 +223,5 @@ fn play_and_draw(game: &mut Game, display: &mut Display) {
         }
         game.reset();
     }
+    Ok(())
 }
