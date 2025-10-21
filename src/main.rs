@@ -19,7 +19,6 @@ use embedded_graphics::draw_target::DrawTarget;
 use embedded_graphics::pixelcolor::BinaryColor;
 use rand::rngs::SmallRng;
 use rand::SeedableRng;
-use u8g2_fonts::Error as FontError;
 
 use game_logic::two_four_eighteen::{Game, NumberOfDice};
 use pico_display::messages;
@@ -195,16 +194,32 @@ fn IO_IRQ_BANK0() {
     }
 }
 
+#[derive(Debug)]
+enum DrawError<DisplayError> {
+    FontError(u8g2_fonts::Error<DisplayError>),
+    DisplayError(DisplayError),
+}
+
+impl<DisplayError> From<DisplayError> for DrawError<DisplayError> {
+    fn from(e: DisplayError) -> Self {
+        DrawError::DisplayError(e)
+    }
+}
+
+impl<DisplayError> From<u8g2_fonts::Error<DisplayError>> for DrawError<DisplayError> {
+    fn from(e: u8g2_fonts::Error<DisplayError>) -> Self {
+        DrawError::FontError(e)
+    }
+}
+
 fn play_and_draw(
     game: &mut Game,
     display: &mut Display,
-) -> Result<(), FontError<<Display as DrawTarget>::Error>> {
-    display
-        .clear(BinaryColor::Off)
-        .map_err(FontError::DisplayError)?;
+) -> Result<(), DrawError<<Display as DrawTarget>::Error>> {
+    display.clear(BinaryColor::Off)?;
     if game.dice_left > NumberOfDice::Zero {
         game.roll();
-        game.rolled.draw(display).map_err(FontError::DisplayError)?;
+        game.rolled.draw(display)?;
         info!("current score: {}", game.score());
     } else {
         let mut picked: Vec<String> = game
