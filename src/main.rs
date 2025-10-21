@@ -197,11 +197,15 @@ fn IO_IRQ_BANK0() {
 fn play_and_draw(
     game: &mut Game,
     display: &mut Display,
-) -> Result<(), <Display as DrawTarget>::Error> {
-    display.clear(BinaryColor::Off)?;
+) -> Result<(), u8g2_fonts::Error<<Display as DrawTarget>::Error>> {
+    display
+        .clear(BinaryColor::Off)
+        .map_err(u8g2_fonts::Error::DisplayError)?;
     if game.dice_left > NumberOfDice::Zero {
         game.roll();
-        game.rolled.draw(display)?;
+        game.rolled
+            .draw(display)
+            .map_err(u8g2_fonts::Error::DisplayError)?;
         info!("current score: {}", game.score());
     } else {
         let mut picked: Vec<String> = game
@@ -213,13 +217,12 @@ fn play_and_draw(
         info!("picked: {}", picked.join(",").as_str());
         let score = game.score();
         info!("final score: {}", score);
-        display.clear(BinaryColor::Off)?;
         if game.has_fish() {
-            messages::big_centered_message("Fish!", display).unwrap();
+            messages::big_centered_message("Fish!", display)?;
         } else if game.has_won() {
-            messages::big_centered_message("18!\nYou Win!", display).unwrap();
+            messages::big_centered_message("18!\nYou Win!", display)?;
         } else {
-            messages::big_centered_message(score.to_string().as_str(), display).unwrap();
+            messages::big_centered_message(score.to_string().as_str(), display)?;
         }
         game.reset();
     }

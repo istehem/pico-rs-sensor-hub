@@ -26,6 +26,7 @@ embedded-graphics = { workspace = true }
 rand = { workspace = true }
 embedded-alloc = "0.6.0"
 critical-section = "1.2.0"
+u8g2-fonts = "0.7.2"
 
 [workspace.dependencies]
 embedded-graphics = "0.8.1"
