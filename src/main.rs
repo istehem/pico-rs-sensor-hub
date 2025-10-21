@@ -1,11 +1,16 @@
 #![no_std]
 #![no_main]
 
+extern crate alloc;
+
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 use bsp::entry;
 use core::cell::RefCell;
 use critical_section::Mutex;
 use defmt::info;
 use defmt_rtt as _;
+use embedded_alloc::LlffHeap;
 use embedded_hal::digital::OutputPin;
 use embedded_hal::digital::StatefulOutputPin;
 use panic_probe as _;
@@ -38,12 +43,8 @@ use crate::gpio::bank0::Gpio7;
 use crate::gpio::FunctionSio;
 use crate::gpio::Interrupt;
 
-extern crate alloc;
-
-use embedded_alloc::LlffHeap;
-
-use alloc::string::{String, ToString};
-use alloc::vec::Vec;
+mod error;
+use crate::error::DrawError;
 
 #[global_allocator]
 static HEAP: LlffHeap = LlffHeap::empty();
@@ -191,24 +192,6 @@ fn IO_IRQ_BANK0() {
                 display.flush().unwrap();
             }
         }
-    }
-}
-
-#[derive(Debug)]
-enum DrawError<DisplayError> {
-    FontError(u8g2_fonts::Error<DisplayError>),
-    DisplayError(DisplayError),
-}
-
-impl<DisplayError> From<DisplayError> for DrawError<DisplayError> {
-    fn from(e: DisplayError) -> Self {
-        DrawError::DisplayError(e)
-    }
-}
-
-impl<DisplayError> From<u8g2_fonts::Error<DisplayError>> for DrawError<DisplayError> {
-    fn from(e: u8g2_fonts::Error<DisplayError>) -> Self {
-        DrawError::FontError(e)
     }
 }
 
