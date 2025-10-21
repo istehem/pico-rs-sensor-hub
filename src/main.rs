@@ -19,6 +19,7 @@ use embedded_graphics::draw_target::DrawTarget;
 use embedded_graphics::pixelcolor::BinaryColor;
 use rand::rngs::SmallRng;
 use rand::SeedableRng;
+use u8g2_fonts::Error as FontError;
 
 use game_logic::two_four_eighteen::{Game, NumberOfDice};
 use pico_display::messages;
@@ -197,15 +198,13 @@ fn IO_IRQ_BANK0() {
 fn play_and_draw(
     game: &mut Game,
     display: &mut Display,
-) -> Result<(), u8g2_fonts::Error<<Display as DrawTarget>::Error>> {
+) -> Result<(), FontError<<Display as DrawTarget>::Error>> {
     display
         .clear(BinaryColor::Off)
-        .map_err(u8g2_fonts::Error::DisplayError)?;
+        .map_err(FontError::DisplayError)?;
     if game.dice_left > NumberOfDice::Zero {
         game.roll();
-        game.rolled
-            .draw(display)
-            .map_err(u8g2_fonts::Error::DisplayError)?;
+        game.rolled.draw(display).map_err(FontError::DisplayError)?;
         info!("current score: {}", game.score());
     } else {
         let mut picked: Vec<String> = game
