@@ -58,13 +58,12 @@ type I2CConfig = I2C<
         gpio::Pin<Gpio7, gpio::FunctionI2C, gpio::PullUp>,
     ),
 >;
-type Display = Option<
-    Ssd1306<I2CInterface<I2CConfig>, DisplaySize128x64, BufferedGraphicsMode<DisplaySize128x64>>,
->;
+type Display =
+    Ssd1306<I2CInterface<I2CConfig>, DisplaySize128x64, BufferedGraphicsMode<DisplaySize128x64>>;
 
 static IR_BREAK_BEAM: Mutex<RefCell<IrBreakBeamPin>> = Mutex::new(RefCell::new(None));
 static ON_BOARD_LED: Mutex<RefCell<OnBoardLed>> = Mutex::new(RefCell::new(None));
-static DISPLAY: Mutex<RefCell<Display>> = Mutex::new(RefCell::new(None));
+static DISPLAY: Mutex<RefCell<Option<Display>>> = Mutex::new(RefCell::new(None));
 static GAME: Mutex<RefCell<Option<Game>>> = Mutex::new(RefCell::new(None));
 
 #[entry]
@@ -150,7 +149,7 @@ fn main() -> ! {
 fn IO_IRQ_BANK0() {
     static mut IR_BREAK_BEAM_PIN: IrBreakBeamPin = None;
     static mut ON_BOARD_LED_PIN: OnBoardLed = None;
-    static mut DISPLAY_IN_IRQ: Display = None;
+    static mut DISPLAY_IN_IRQ: Option<Display> = None;
     static mut GAME_IN_IRQ: Option<Game> = None;
 
     if IR_BREAK_BEAM_PIN.is_none() {
@@ -188,34 +187,37 @@ fn IO_IRQ_BANK0() {
                 led_pin.toggle().unwrap();
             }
             if let (Some(display), Some(game)) = (DISPLAY_IN_IRQ, GAME_IN_IRQ) {
-                display.clear(BinaryColor::Off).unwrap();
-                if game.dice_left > NumberOfDice::Zero {
-                    game.roll();
-                    game.rolled.draw(display).unwrap();
-                    info!("current score: {}", game.score());
-                } else {
-                    let mut picked: Vec<String> = game
-                        .picked
-                        .iter()
-                        .map(|die| die.value.as_u8().to_string())
-                        .collect();
-                    picked.sort();
-                    info!("picked: {}", picked.join(",").as_str());
-                    let score = game.score();
-                    info!("final score: {}", score);
-                    display.clear(BinaryColor::Off).unwrap();
-                    if game.has_fish() {
-                        messages::big_centered_message("Fish!", display).unwrap();
-                    } else if game.has_won() {
-                        messages::big_centered_message("18!\nYou Win!", display).unwrap();
-                    } else {
-                        messages::big_centered_message(score.to_string().as_str(), display)
-                            .unwrap();
-                    }
-                    game.reset();
-                }
+                play_and_draw(game, display);
                 display.flush().unwrap();
             }
         }
+    }
+}
+
+fn play_and_draw(game: &mut Game, display: &mut Display) {
+    display.clear(BinaryColor::Off).unwrap();
+    if game.dice_left > NumberOfDice::Zero {
+        game.roll();
+        game.rolled.draw(display).unwrap();
+        info!("current score: {}", game.score());
+    } else {
+        let mut picked: Vec<String> = game
+            .picked
+            .iter()
+            .map(|die| die.value.as_u8().to_string())
+            .collect();
+        picked.sort();
+        info!("picked: {}", picked.join(",").as_str());
+        let score = game.score();
+        info!("final score: {}", score);
+        display.clear(BinaryColor::Off).unwrap();
+        if game.has_fish() {
+            messages::big_centered_message("Fish!", display).unwrap();
+        } else if game.has_won() {
+            messages::big_centered_message("18!\nYou Win!", display).unwrap();
+        } else {
+            messages::big_centered_message(score.to_string().as_str(), display).unwrap();
+        }
+        game.reset();
     }
 }
