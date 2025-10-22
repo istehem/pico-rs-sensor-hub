@@ -56,7 +56,7 @@ use crate::error::DrawError;
 static HEAP: LlffHeap = LlffHeap::empty();
 
 type IrBreakBeamPin = Option<gpio::Pin<gpio::bank0::Gpio21, gpio::FunctionSioInput, gpio::PullUp>>;
-type OnBoardLed =
+type OnBoardLedPin =
     Option<gpio::Pin<gpio::bank0::Gpio25, FunctionSio<gpio::SioOutput>, gpio::PullDown>>;
 type I2CConfig = I2C<
     pac::I2C1,
@@ -69,10 +69,11 @@ type Display =
     Ssd1306<I2CInterface<I2CConfig>, DisplaySize128x64, BufferedGraphicsMode<DisplaySize128x64>>;
 
 static IR_BREAK_BEAM: Mutex<RefCell<IrBreakBeamPin>> = Mutex::new(RefCell::new(None));
-static ON_BOARD_LED: Mutex<RefCell<OnBoardLed>> = Mutex::new(RefCell::new(None));
+static ON_BOARD_LED: Mutex<RefCell<OnBoardLedPin>> = Mutex::new(RefCell::new(None));
 static DISPLAY: Mutex<RefCell<Option<Display>>> = Mutex::new(RefCell::new(None));
-static GAME: Mutex<RefCell<Option<Game>>> = Mutex::new(RefCell::new(None));
 static TIMER: Mutex<RefCell<Option<Timer>>> = Mutex::new(RefCell::new(None));
+
+const ONE_SECOND_IN_MUS: u64 = 1000000;
 
 #[entry]
 fn main() -> ! {
@@ -129,6 +130,9 @@ fn main() -> ! {
         .into_buffered_graphics_mode();
 
     display.init().unwrap();
+    display.clear(BinaryColor::Off).unwrap();
+    messages::big_centered_message("Let's\nGo!", &mut display).unwrap();
+    display.flush().unwrap();
 
     let mut led_pin = pins.led.into_push_pull_output();
     led_pin.set_low().unwrap();
@@ -142,8 +146,6 @@ fn main() -> ! {
         IR_BREAK_BEAM.borrow(cs).replace(Some(gpio21));
         ON_BOARD_LED.borrow(cs).replace(Some(led_pin));
         DISPLAY.borrow(cs).replace(Some(display));
-        GAME.borrow(cs)
-            .replace(Some(Game::new(SmallRng::seed_from_u64(12345))));
         TIMER
             .borrow(cs)
             .replace(Some(Timer::new(pac.TIMER, &mut pac.RESETS, &clocks)));
@@ -159,34 +161,29 @@ fn main() -> ! {
 
 #[interrupt]
 fn IO_IRQ_BANK0() {
-    static mut IR_BREAK_BEAM_PIN: IrBreakBeamPin = None;
-    static mut ON_BOARD_LED_PIN: OnBoardLed = None;
+    static mut IR_BREAK_BEAM_IN_IRQ: IrBreakBeamPin = None;
+    static mut ON_BOARD_LED_IN_IRQ: OnBoardLedPin = None;
     static mut DISPLAY_IN_IRQ: Option<Display> = None;
-    static mut GAME_IN_IRQ: Option<Game> = None;
     static mut TIMER_IN_IRQ: Option<Timer> = None;
-    static mut BEAM_BROKEN_INSTANT: Option<Instant> = None;
 
-    if IR_BREAK_BEAM_PIN.is_none() {
+    static mut BEAM_BROKEN_INSTANT: Option<Instant> = None;
+    static mut GAME: Option<Game> = None;
+
+    if IR_BREAK_BEAM_IN_IRQ.is_none() {
         critical_section::with(|cs| {
-            *IR_BREAK_BEAM_PIN = IR_BREAK_BEAM.borrow(cs).take();
+            *IR_BREAK_BEAM_IN_IRQ = IR_BREAK_BEAM.borrow(cs).take();
         });
     }
 
-    if ON_BOARD_LED_PIN.is_none() {
+    if ON_BOARD_LED_IN_IRQ.is_none() {
         critical_section::with(|cs| {
-            *ON_BOARD_LED_PIN = ON_BOARD_LED.borrow(cs).take();
+            *ON_BOARD_LED_IN_IRQ = ON_BOARD_LED.borrow(cs).take();
         });
     }
 
     if DISPLAY_IN_IRQ.is_none() {
         critical_section::with(|cs| {
             *DISPLAY_IN_IRQ = DISPLAY.borrow(cs).take();
-        });
-    }
-
-    if GAME_IN_IRQ.is_none() {
-        critical_section::with(|cs| {
-            *GAME_IN_IRQ = GAME.borrow(cs).take();
         });
     }
 
@@ -197,13 +194,13 @@ fn IO_IRQ_BANK0() {
     }
 
     // Check and handle the interrupt
-    if let Some(beam_pin) = IR_BREAK_BEAM_PIN {
+    if let Some(beam_pin) = IR_BREAK_BEAM_IN_IRQ {
         if beam_pin.interrupt_status(Interrupt::EdgeLow) {
             // Always clear the interrupt flag
             beam_pin.clear_interrupt(Interrupt::EdgeLow);
             info!("Beam broken!");
 
-            if let Some(led_pin) = ON_BOARD_LED_PIN {
+            if let Some(led_pin) = ON_BOARD_LED_IN_IRQ {
                 led_pin.toggle().unwrap();
             }
             if let Some(timer) = TIMER_IN_IRQ {
@@ -212,7 +209,7 @@ fn IO_IRQ_BANK0() {
                 *BEAM_BROKEN_INSTANT = Some(instant);
             }
 
-            if let (Some(display), Some(game)) = (DISPLAY_IN_IRQ, GAME_IN_IRQ) {
+            if let (Some(display), Some(game)) = (DISPLAY_IN_IRQ, GAME) {
                 play_and_draw(game, display).unwrap();
                 display.flush().unwrap();
             }
@@ -220,13 +217,15 @@ fn IO_IRQ_BANK0() {
             beam_pin.clear_interrupt(Interrupt::EdgeHigh);
             info!("Beam restored!");
             if let (Some(timer), Some(broken_instant)) = (TIMER_IN_IRQ, BEAM_BROKEN_INSTANT) {
-                let restored_instant = timer.get_counter();
-                info!(
-                    "Beam broken for {} mus.",
-                    restored_instant.ticks() - broken_instant.ticks()
-                );
+                let broken_for = timer.get_counter().ticks() - broken_instant.ticks();
+                info!("Beam broken for {} mus.", broken_for);
+
+                // seeding must take a least on second
+                if broken_for > ONE_SECOND_IN_MUS {
+                    *GAME = Some(Game::new(SmallRng::seed_from_u64(broken_for)));
+                    beam_pin.set_interrupt_enabled(Interrupt::EdgeHigh, false);
+                }
             }
-            beam_pin.set_interrupt_enabled(Interrupt::EdgeHigh, false);
         }
     }
 }
