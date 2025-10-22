@@ -208,7 +208,7 @@ fn IO_IRQ_BANK0() {
             }
             if let Some(timer) = TIMER_IN_IRQ {
                 let instant = timer.get_counter();
-                info!("Beam broken after {}.", instant.ticks());
+                info!("Beam broken after {} mus.", instant.ticks());
                 *BEAM_BROKEN_INSTANT = Some(instant);
             }
 
@@ -222,7 +222,7 @@ fn IO_IRQ_BANK0() {
             if let (Some(timer), Some(broken_instant)) = (TIMER_IN_IRQ, BEAM_BROKEN_INSTANT) {
                 let restored_instant = timer.get_counter();
                 info!(
-                    "Beam broken for {}.",
+                    "Beam broken for {} mus.",
                     restored_instant.ticks() - broken_instant.ticks()
                 );
             }
