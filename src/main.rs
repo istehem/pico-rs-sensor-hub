@@ -34,8 +34,14 @@ use rp_pico as bsp;
 // use sparkfun_pro_micro_rp2040 as bsp;
 
 use bsp::hal::{
-    clocks::init_clocks_and_plls, fugit::RateExtU32, gpio, pac, pac::interrupt, sio::Sio,
-    watchdog::Watchdog, I2C,
+    clocks::init_clocks_and_plls,
+    fugit::RateExtU32,
+    gpio, pac,
+    pac::interrupt,
+    sio::Sio,
+    timer::{Instant, Timer},
+    watchdog::Watchdog,
+    I2C,
 };
 
 use crate::gpio::bank0::Gpio6;
@@ -66,6 +72,7 @@ static IR_BREAK_BEAM: Mutex<RefCell<IrBreakBeamPin>> = Mutex::new(RefCell::new(N
 static ON_BOARD_LED: Mutex<RefCell<OnBoardLed>> = Mutex::new(RefCell::new(None));
 static DISPLAY: Mutex<RefCell<Option<Display>>> = Mutex::new(RefCell::new(None));
 static GAME: Mutex<RefCell<Option<Game>>> = Mutex::new(RefCell::new(None));
+static TIMER: Mutex<RefCell<Option<Timer>>> = Mutex::new(RefCell::new(None));
 
 #[entry]
 fn main() -> ! {
@@ -129,6 +136,7 @@ fn main() -> ! {
     // enable IRQ for the GPIO pin the IR sensor is connected to.
     let gpio21 = pins.gpio21.into_pull_up_input();
     gpio21.set_interrupt_enabled(Interrupt::EdgeLow, true);
+    gpio21.set_interrupt_enabled(Interrupt::EdgeHigh, true);
 
     critical_section::with(|cs| {
         IR_BREAK_BEAM.borrow(cs).replace(Some(gpio21));
@@ -136,6 +144,9 @@ fn main() -> ! {
         DISPLAY.borrow(cs).replace(Some(display));
         GAME.borrow(cs)
             .replace(Some(Game::new(SmallRng::seed_from_u64(12345))));
+        TIMER
+            .borrow(cs)
+            .replace(Some(Timer::new(pac.TIMER, &mut pac.RESETS, &clocks)));
     });
     unsafe {
         pac::NVIC::unmask(pac::Interrupt::IO_IRQ_BANK0); // Unmask NVIC interrupt
@@ -152,6 +163,8 @@ fn IO_IRQ_BANK0() {
     static mut ON_BOARD_LED_PIN: OnBoardLed = None;
     static mut DISPLAY_IN_IRQ: Option<Display> = None;
     static mut GAME_IN_IRQ: Option<Game> = None;
+    static mut TIMER_IN_IRQ: Option<Timer> = None;
+    static mut BEAM_BROKEN_INSTANT: Option<Instant> = None;
 
     if IR_BREAK_BEAM_PIN.is_none() {
         critical_section::with(|cs| {
@@ -177,20 +190,43 @@ fn IO_IRQ_BANK0() {
         });
     }
 
+    if TIMER_IN_IRQ.is_none() {
+        critical_section::with(|cs| {
+            *TIMER_IN_IRQ = TIMER.borrow(cs).take();
+        });
+    }
+
     // Check and handle the interrupt
     if let Some(beam_pin) = IR_BREAK_BEAM_PIN {
         if beam_pin.interrupt_status(Interrupt::EdgeLow) {
-            info!("Beam broken!");
             // Always clear the interrupt flag
             beam_pin.clear_interrupt(Interrupt::EdgeLow);
+            info!("Beam broken!");
 
             if let Some(led_pin) = ON_BOARD_LED_PIN {
                 led_pin.toggle().unwrap();
             }
+            if let Some(timer) = TIMER_IN_IRQ {
+                let instant = timer.get_counter();
+                info!("Beam broken after {}.", instant.ticks());
+                *BEAM_BROKEN_INSTANT = Some(instant);
+            }
+
             if let (Some(display), Some(game)) = (DISPLAY_IN_IRQ, GAME_IN_IRQ) {
                 play_and_draw(game, display).unwrap();
                 display.flush().unwrap();
             }
+        } else if beam_pin.interrupt_status(Interrupt::EdgeHigh) {
+            beam_pin.clear_interrupt(Interrupt::EdgeHigh);
+            info!("Beam restored!");
+            if let (Some(timer), Some(broken_instant)) = (TIMER_IN_IRQ, BEAM_BROKEN_INSTANT) {
+                let restored_instant = timer.get_counter();
+                info!(
+                    "Beam broken for {}.",
+                    restored_instant.ticks() - broken_instant.ticks()
+                );
+            }
+            beam_pin.set_interrupt_enabled(Interrupt::EdgeHigh, false);
         }
     }
 }
