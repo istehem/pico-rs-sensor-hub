@@ -131,7 +131,6 @@ fn main() -> ! {
 
     display.init().unwrap();
     display.clear(BinaryColor::Off).unwrap();
-    messages::big_centered_message("Let's\nGo!", &mut display).unwrap();
     display.flush().unwrap();
 
     let mut led_pin = pins.led.into_push_pull_output();
@@ -209,21 +208,36 @@ fn IO_IRQ_BANK0() {
                 *BEAM_BROKEN_INSTANT = Some(instant);
             }
 
-            if let (Some(display), Some(game)) = (DISPLAY_IN_IRQ, GAME) {
-                play_and_draw(game, display).unwrap();
-                display.flush().unwrap();
+            if let Some(display) = DISPLAY_IN_IRQ {
+                if let Some(game) = GAME {
+                    play_and_draw(game, display).unwrap();
+                    display.flush().unwrap();
+                } else {
+                    messages::big_centered_message(
+                        "Break the beam for a at least second to start the game.",
+                        display,
+                    )
+                    .unwrap();
+                    display.flush().unwrap();
+                }
             }
         } else if beam_pin.interrupt_status(Interrupt::EdgeHigh) {
             beam_pin.clear_interrupt(Interrupt::EdgeHigh);
             info!("Beam restored!");
-            if let (Some(timer), Some(broken_instant)) = (TIMER_IN_IRQ, BEAM_BROKEN_INSTANT) {
+            if let (Some(timer), Some(broken_instant), Some(display)) =
+                (TIMER_IN_IRQ, BEAM_BROKEN_INSTANT, DISPLAY_IN_IRQ)
+            {
                 let broken_for = timer.get_counter().ticks() - broken_instant.ticks();
                 info!("Beam broken for {} mus.", broken_for);
 
                 // seeding must take a least on second
                 if broken_for > ONE_SECOND_IN_MUS {
-                    *GAME = Some(Game::new(SmallRng::seed_from_u64(broken_for)));
                     beam_pin.set_interrupt_enabled(Interrupt::EdgeHigh, false);
+
+                    let mut game = Game::new(SmallRng::seed_from_u64(broken_for));
+                    play_and_draw(&mut game, display).unwrap();
+                    display.flush().unwrap();
+                    *GAME = Some(game);
                 }
             }
         }
