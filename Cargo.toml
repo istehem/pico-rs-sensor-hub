@@ -8,16 +8,13 @@ version = "0.1.0"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-cortex-m = "0.7"
 cortex-m-rt = "0.7"
-embedded-hal = { version = "1.0.0" }
 
 defmt = "1"
 defmt-rtt = "1"
 panic-probe = { version = "1", features = ["print-defmt"] }
 
 # We're using a Pico by default on this template
-rp-pico = "0.9"
 ssd1306 = "0.10.0"
 
 game-logic = { path = "./crates/game-logic" }
@@ -25,10 +22,8 @@ pico-display = { path = "./crates/pico-display" }
 embedded-graphics = { workspace = true }
 rand = { workspace = true }
 embedded-alloc = "0.6.0"
-critical-section = "1.2.0"
 u8g2-fonts = "0.7.2"
 
-# embassy-embedded-hal = { version = "0.5.0", path = "../../embassy-embedded-hal", features = ["defmt"] }
 embassy-sync = { version = "0.7.2", features = ["defmt"] }
 embassy-executor = { version = "0.9.1", features = ["arch-cortex-m", "executor-thread", "executor-interrupt", "defmt"] }
 embassy-time = { version = "0.5.0", features = ["defmt", "defmt-timestamp-uptime"] }
