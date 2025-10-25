@@ -71,8 +71,8 @@ async fn oled_task(i2c: &'static mut I2c<'static, I2C1, i2c::Async>) {
     let mut display = Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
         .into_buffered_graphics_mode();
 
-    messages::big_centered_message(
-        "Break the beam for a at least second to start the game.",
+    messages::medium_sized_centered_message(
+        "Break the beam for\n at least one second\n to start the game.",
         &mut display,
     )
     .unwrap();
@@ -85,35 +85,35 @@ use embassy_rp::gpio::{self, Input, Level, Pull};
 use embassy_sync::signal::Signal;
 
 static GPIO21_SIGNAL: Signal<embassy_sync::blocking_mutex::raw::NoopRawMutex, Level> =
-    Signal::new();
+Signal::new();
 
 embassy_rp::bind_interrupts!(struct Irqs {
-    IO_IRQ_BANK0 => embassy_rp::gpio::InterruptHandler;
+IO_IRQ_BANK0 => embassy_rp::gpio::InterruptHandler;
 });
 
 #[embassy_executor::main]
 async fn main(_spawner: Spawner) {
-    let p = embassy_rp::init(Default::default());
+let p = embassy_rp::init(Default::default());
 
-    let mut pin = Input::new(p.PIN_21, Pull::Up);
-    pin.enable_irq(embassy_rp::gpio::Interrupt::LevelLow);
-    pin.enable_irq(embassy_rp::gpio::Interrupt::LevelHigh);
+let mut pin = Input::new(p.PIN_21, Pull::Up);
+pin.enable_irq(embassy_rp::gpio::Interrupt::LevelLow);
+pin.enable_irq(embassy_rp::gpio::Interrupt::LevelHigh);
 
-    loop {
-        // NOP: just sleep and let interrupts do the work
-        embassy_time::Timer::after_millis(1000).await;
-    }
+loop {
+// NOP: just sleep and let interrupts do the work
+embassy_time::Timer::after_millis(1000).await;
+}
 }
 
 #[embassy_executor::task]
 async fn gpio_handler() {
-    loop {
-        let (pin, level) = embassy_rp::gpio::wait_for_interrupt().await;
-        if pin == 21 {
-            GPIO21_SIGNAL.signal(level);
-            defmt::info!("GPIO21: {:?}", level);
-        }
-    }
+loop {
+let (pin, level) = embassy_rp::gpio::wait_for_interrupt().await;
+if pin == 21 {
+GPIO21_SIGNAL.signal(level);
+defmt::info!("GPIO21: {:?}", level);
+}
+}
 }
 */
 
@@ -136,8 +136,8 @@ use embedded_hal::digital::StatefulOutputPin;
 use panic_probe as _;
 use ssd1306::mode::DisplayConfig;
 use ssd1306::{
-    mode::BufferedGraphicsMode, prelude::I2CInterface, rotation::DisplayRotation,
-    size::DisplaySize128x64, I2CDisplayInterface, Ssd1306,
+mode::BufferedGraphicsMode, prelude::I2CInterface, rotation::DisplayRotation,
+size::DisplaySize128x64, I2CDisplayInterface, Ssd1306,
 };
 
 use embedded_graphics::draw_target::DrawTarget;
@@ -154,14 +154,14 @@ use rp_pico as bsp;
 // use sparkfun_pro_micro_rp2040 as bsp;
 
 use bsp::hal::{
-    clocks::init_clocks_and_plls,
-    fugit::RateExtU32,
-    gpio, pac,
-    pac::interrupt,
-    sio::Sio,
-    timer::{Instant, Timer},
-    watchdog::Watchdog,
-    I2C,
+clocks::init_clocks_and_plls,
+fugit::RateExtU32,
+gpio, pac,
+pac::interrupt,
+sio::Sio,
+timer::{Instant, Timer},
+watchdog::Watchdog,
+I2C,
 };
 
 use crate::gpio::bank0::Gpio6;
