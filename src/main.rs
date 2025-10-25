@@ -1,17 +1,21 @@
 #![no_std]
 #![no_main]
 
-use defmt::*;
+use defmt::info;
 use embassy_executor::Spawner;
 use embassy_rp::gpio;
+use embassy_rp::gpio::{Input, Pull};
 use embassy_time::Timer;
 use gpio::{Level, Output};
 use {defmt_rtt as _, panic_probe as _};
 
 #[embassy_executor::main]
-async fn main(_spawner: Spawner) {
+async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
     let mut led = Output::new(p.PIN_25, Level::Low);
+
+    let sensor = Input::new(p.PIN_21, Pull::Up);
+    spawner.spawn(ir_task(sensor)).unwrap();
 
     loop {
         info!("led on!");
@@ -21,6 +25,14 @@ async fn main(_spawner: Spawner) {
         info!("led off!");
         led.set_low();
         Timer::after_secs(1).await;
+    }
+}
+
+#[embassy_executor::task]
+async fn ir_task(mut sensor: Input<'static>) {
+    loop {
+        sensor.wait_for_any_edge().await;
+        defmt::info!("Edge detected, level: {}", sensor.is_high());
     }
 }
 
