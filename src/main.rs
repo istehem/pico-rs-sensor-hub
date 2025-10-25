@@ -213,7 +213,7 @@ fn IO_IRQ_BANK0() {
                     play_and_draw(game, display).unwrap();
                     display.flush().unwrap();
                 } else {
-                    messages::big_centered_message(
+                    messages::alternative_centered_message(
                         "Break the beam for a at least second to start the game.",
                         display,
                     )
