@@ -1,6 +1,71 @@
 #![no_std]
 #![no_main]
 
+use defmt::*;
+use embassy_executor::Spawner;
+use embassy_rp::gpio;
+use embassy_time::Timer;
+use gpio::{Level, Output};
+use {defmt_rtt as _, panic_probe as _};
+
+#[embassy_executor::main]
+async fn main(_spawner: Spawner) {
+    let p = embassy_rp::init(Default::default());
+    let mut led = Output::new(p.PIN_25, Level::Low);
+
+    loop {
+        info!("led on!");
+        led.set_high();
+        Timer::after_secs(2).await;
+
+        info!("led off!");
+        led.set_low();
+        Timer::after_secs(1).await;
+    }
+}
+
+/*
+use embassy_executor::Spawner;
+use embassy_rp::gpio::{self, Input, Level, Pull};
+use embassy_sync::signal::Signal;
+
+static GPIO21_SIGNAL: Signal<embassy_sync::blocking_mutex::raw::NoopRawMutex, Level> =
+    Signal::new();
+
+embassy_rp::bind_interrupts!(struct Irqs {
+    IO_IRQ_BANK0 => embassy_rp::gpio::InterruptHandler;
+});
+
+#[embassy_executor::main]
+async fn main(_spawner: Spawner) {
+    let p = embassy_rp::init(Default::default());
+
+    let mut pin = Input::new(p.PIN_21, Pull::Up);
+    pin.enable_irq(embassy_rp::gpio::Interrupt::LevelLow);
+    pin.enable_irq(embassy_rp::gpio::Interrupt::LevelHigh);
+
+    loop {
+        // NOP: just sleep and let interrupts do the work
+        embassy_time::Timer::after_millis(1000).await;
+    }
+}
+
+#[embassy_executor::task]
+async fn gpio_handler() {
+    loop {
+        let (pin, level) = embassy_rp::gpio::wait_for_interrupt().await;
+        if pin == 21 {
+            GPIO21_SIGNAL.signal(level);
+            defmt::info!("GPIO21: {:?}", level);
+        }
+    }
+}
+*/
+
+/*
+#![no_std]
+#![no_main]
+
 extern crate alloc;
 
 use alloc::string::{String, ToString};
@@ -74,44 +139,6 @@ static DISPLAY: Mutex<RefCell<Option<Display>>> = Mutex::new(RefCell::new(None))
 static TIMER: Mutex<RefCell<Option<Timer>>> = Mutex::new(RefCell::new(None));
 
 const ONE_SECOND_IN_MUS: u64 = 1000000;
-
-/*
-use embassy_executor::Spawner;
-use embassy_rp::gpio::{self, Input, Level, Pull};
-use embassy_sync::signal::Signal;
-
-static GPIO21_SIGNAL: Signal<embassy_sync::blocking_mutex::raw::NoopRawMutex, Level> =
-    Signal::new();
-
-embassy_rp::bind_interrupts!(struct Irqs {
-    IO_IRQ_BANK0 => embassy_rp::gpio::InterruptHandler;
-});
-
-#[embassy_executor::main]
-async fn main(_spawner: Spawner) {
-    let p = embassy_rp::init(Default::default());
-
-    let mut pin = Input::new(p.PIN_21, Pull::Up);
-    pin.enable_irq(embassy_rp::gpio::Interrupt::LevelLow);
-    pin.enable_irq(embassy_rp::gpio::Interrupt::LevelHigh);
-
-    loop {
-        // NOP: just sleep and let interrupts do the work
-        embassy_time::Timer::after_millis(1000).await;
-    }
-}
-
-#[embassy_executor::task]
-async fn gpio_handler() {
-    loop {
-        let (pin, level) = embassy_rp::gpio::wait_for_interrupt().await;
-        if pin == 21 {
-            GPIO21_SIGNAL.signal(level);
-            defmt::info!("GPIO21: {:?}", level);
-        }
-    }
-}
-*/
 
 #[entry]
 fn main() -> ! {
@@ -312,3 +339,4 @@ fn play_and_draw(
     }
     Ok(())
 }
+*/
