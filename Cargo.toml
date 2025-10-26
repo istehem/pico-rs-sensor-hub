@@ -21,7 +21,7 @@ embassy-executor = { version = "0.9.1", features = ["arch-cortex-m", "executor-t
 embassy-time = { version = "0.5.0", features = ["defmt", "defmt-timestamp-uptime"] }
 embassy-rp = { version = "0.8.0", features = ["defmt", "unstable-pac", "time-driver", "critical-section-impl", "rp2040", "rt"] }
 panic-probe = { version = "1", features = ["print-defmt"] }
-portable-atomic = { version = "1.0", features = ["critical-section"] }
+portable-atomic = { version = "1.11.1", features = ["critical-section"] }
 rand = { workspace = true }
 ssd1306 = "0.10.0"
 static_cell = "2.1.1"

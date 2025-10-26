@@ -10,7 +10,7 @@ rstest = "0.26.1"
 tracing = "0.1.41"
 test-log = { version = "0.2", features = ["trace"] }
 embedded-graphics = { workspace = true }
-embedded-graphics-simulator = "0.7.0"
+embedded-graphics-simulator = "0.8.0"
 rand = { workspace = true, default-features = true }
 pico-display = { path = "../crates/pico-display" }
 game-logic = { path = "../crates/game-logic" }
