@@ -56,7 +56,7 @@ async fn main(spawner: Spawner) {
     }
     let p = embassy_rp::init(Default::default());
 
-    let roll_channel = &*ROLL_CHANNEL.init(Channel::new());
+    let roll_channel = ROLL_CHANNEL.init(Channel::new());
 
     let led = Output::new(p.PIN_25, Level::Low);
     let led = LED.init(led);
