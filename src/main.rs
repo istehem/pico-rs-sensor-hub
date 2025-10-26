@@ -15,6 +15,7 @@ use embassy_rp::peripherals::I2C1;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_sync::channel::Channel;
 use embassy_time::Instant;
+use embedded_alloc::LlffHeap;
 use embedded_graphics::draw_target::DrawTarget;
 use embedded_graphics::geometry::OriginDimensions;
 use embedded_graphics::pixelcolor::BinaryColor;
@@ -25,8 +26,6 @@ use ssd1306::mode::DisplayConfig;
 use ssd1306::{rotation::DisplayRotation, size::DisplaySize128x64, I2CDisplayInterface, Ssd1306};
 use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};
-
-use embedded_alloc::LlffHeap;
 
 use game_logic::two_four_eighteen::{Game, NumberOfDice};
 use pico_display::messages;
