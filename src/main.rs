@@ -8,8 +8,7 @@ use alloc::vec::Vec;
 use defmt::info;
 use embassy_executor::Spawner;
 use embassy_rp::bind_interrupts;
-use embassy_rp::gpio;
-use embassy_rp::gpio::{Input, Pull};
+use embassy_rp::gpio::{Input, Level, Output, Pull};
 use embassy_rp::i2c::{self, Config as I2cConfig, I2c};
 use embassy_rp::peripherals::I2C1;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
@@ -19,11 +18,12 @@ use embedded_alloc::LlffHeap;
 use embedded_graphics::draw_target::DrawTarget;
 use embedded_graphics::geometry::OriginDimensions;
 use embedded_graphics::pixelcolor::BinaryColor;
-use gpio::{Level, Output};
 use rand::rngs::SmallRng;
 use rand::SeedableRng;
-use ssd1306::mode::DisplayConfig;
-use ssd1306::{rotation::DisplayRotation, size::DisplaySize128x64, I2CDisplayInterface, Ssd1306};
+use ssd1306::{
+    mode::DisplayConfig, rotation::DisplayRotation, size::DisplaySize128x64, I2CDisplayInterface,
+    Ssd1306,
+};
 use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};
 
