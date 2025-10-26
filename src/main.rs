@@ -39,6 +39,8 @@ static HEAP: LlffHeap = LlffHeap::empty();
 
 type RollChannel = Channel<NoopRawMutex, u64, 4>;
 
+const I2C_FREQUENCY: u32 = 400_000;
+
 static I2C: StaticCell<I2c<'static, I2C1, i2c::Async>> = StaticCell::new();
 static ROLL_CHANNEL: StaticCell<RollChannel> = StaticCell::new();
 static LED: StaticCell<Output<'static>> = StaticCell::new();
@@ -62,7 +64,8 @@ async fn main(spawner: Spawner) {
     let sensor = Input::new(p.PIN_21, Pull::Up);
     spawner.spawn(ir_task(sensor, led, roll_channel)).unwrap();
 
-    let config = I2cConfig::default();
+    let mut config = I2cConfig::default();
+    config.frequency = I2C_FREQUENCY;
     let i2c = I2c::new_async(p.I2C1, p.PIN_7, p.PIN_6, Irqs, config);
     let i2c = I2C.init(i2c);
 
