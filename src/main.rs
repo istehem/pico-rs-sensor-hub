@@ -12,10 +12,9 @@ use embassy_rp::gpio;
 use embassy_rp::gpio::{Input, Pull};
 use embassy_rp::i2c::{self, Config as I2cConfig, I2c};
 use embassy_rp::peripherals::I2C1;
-use {defmt_rtt as _, panic_probe as _};
-//use embassy_time::Timer;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_sync::channel::Channel;
+use embassy_time::Instant;
 use embedded_graphics::draw_target::DrawTarget;
 use embedded_graphics::geometry::OriginDimensions;
 use embedded_graphics::pixelcolor::BinaryColor;
@@ -25,6 +24,7 @@ use rand::SeedableRng;
 use ssd1306::mode::DisplayConfig;
 use ssd1306::{rotation::DisplayRotation, size::DisplaySize128x64, I2CDisplayInterface, Ssd1306};
 use static_cell::StaticCell;
+use {defmt_rtt as _, panic_probe as _};
 
 use embedded_alloc::LlffHeap;
 
@@ -40,6 +40,7 @@ static HEAP: LlffHeap = LlffHeap::empty();
 type RollChannel = Channel<NoopRawMutex, u64, 4>;
 
 const I2C_FREQUENCY: u32 = 400_000;
+const ONE_SECOND_IN_MUS: u64 = 1000000;
 
 static I2C: StaticCell<I2c<'static, I2C1, i2c::Async>> = StaticCell::new();
 static ROLL_CHANNEL: StaticCell<RollChannel> = StaticCell::new();
@@ -62,6 +63,7 @@ async fn main(spawner: Spawner) {
     let led = LED.init(led);
 
     let sensor = Input::new(p.PIN_21, Pull::Up);
+
     spawner.spawn(ir_task(sensor, led, roll_channel)).unwrap();
 
     let mut config = I2cConfig::default();
@@ -78,15 +80,30 @@ async fn ir_task(
     led: &'static mut Output<'static>,
     roll_channel: &'static RollChannel,
 ) {
-    let broken_for = 123456;
+    let mut seed: Option<u64> = None;
+    let mut beam_broken_at: Option<Instant> = None;
 
     loop {
         sensor.wait_for_any_edge().await;
         if sensor.is_high() {
             led.set_high();
+
+            if let (Some(beam_broken_at), None) = (beam_broken_at, seed) {
+                let duration = beam_broken_at.elapsed().as_micros();
+                if duration > ONE_SECOND_IN_MUS {
+                    roll_channel.send(duration).await;
+                    seed = Some(duration);
+                }
+                info!("Beam broken for {} mus.", duration);
+            }
         } else {
             led.set_low();
-            roll_channel.send(broken_for).await;
+
+            beam_broken_at = Some(Instant::now());
+
+            if let Some(seed) = seed {
+                roll_channel.send(seed).await;
+            }
         }
         info!("Edge detected, level: {}", sensor.is_high());
     }
