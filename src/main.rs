@@ -37,10 +37,10 @@ use crate::error::DrawError;
 #[global_allocator]
 static HEAP: LlffHeap = LlffHeap::empty();
 
-type GameChannel = Channel<NoopRawMutex, Game, 4>;
+type RollChannel = Channel<NoopRawMutex, u64, 4>;
 
 static I2C: StaticCell<I2c<'static, I2C1, i2c::Async>> = StaticCell::new();
-static GAME_CHANNEL: StaticCell<GameChannel> = StaticCell::new();
+static ROLL_CHANNEL: StaticCell<RollChannel> = StaticCell::new();
 static LED: StaticCell<Output<'static>> = StaticCell::new();
 
 bind_interrupts!(struct Irqs {
@@ -54,36 +54,36 @@ async fn main(spawner: Spawner) {
     }
     let p = embassy_rp::init(Default::default());
 
-    let game_channel = &*GAME_CHANNEL.init(Channel::new());
+    let roll_channel = &*ROLL_CHANNEL.init(Channel::new());
 
     let led = Output::new(p.PIN_25, Level::Low);
     let led = LED.init(led);
 
     let sensor = Input::new(p.PIN_21, Pull::Up);
-    spawner.spawn(ir_task(sensor, led, game_channel)).unwrap();
+    spawner.spawn(ir_task(sensor, led, roll_channel)).unwrap();
 
     let config = I2cConfig::default();
     let i2c = I2c::new_async(p.I2C1, p.PIN_7, p.PIN_6, Irqs, config);
     let i2c = I2C.init(i2c);
 
-    spawner.spawn(oled_task(i2c, game_channel)).unwrap();
+    spawner.spawn(oled_task(i2c, roll_channel)).unwrap();
 }
 
 #[embassy_executor::task]
 async fn ir_task(
     mut sensor: Input<'static>,
     led: &'static mut Output<'static>,
-    game_channel: &'static GameChannel,
+    roll_channel: &'static RollChannel,
 ) {
+    let broken_for = 123456;
+
     loop {
         sensor.wait_for_any_edge().await;
         if sensor.is_high() {
             led.set_high();
         } else {
             led.set_low();
-            let broken_for = 123456;
-            let game = Game::new(SmallRng::seed_from_u64(broken_for));
-            game_channel.send(game).await;
+            roll_channel.send(broken_for).await;
         }
         info!("Edge detected, level: {}", sensor.is_high());
     }
@@ -92,7 +92,7 @@ async fn ir_task(
 #[embassy_executor::task]
 async fn oled_task(
     i2c: &'static mut I2c<'static, I2C1, i2c::Async>,
-    game_channel: &'static GameChannel,
+    roll_channel: &'static RollChannel,
 ) {
     let interface = I2CDisplayInterface::new(i2c);
     let mut display = Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
@@ -108,10 +108,14 @@ async fn oled_task(
     )
     .unwrap();
     display.flush().unwrap();
+
+    let seed = roll_channel.receive().await;
+    let mut game = Game::new(SmallRng::seed_from_u64(seed));
+
     loop {
-        let mut game = game_channel.receive().await;
         play_and_draw(&mut display, &mut game).unwrap();
         display.flush().unwrap();
+        roll_channel.receive().await;
     }
 }
 
