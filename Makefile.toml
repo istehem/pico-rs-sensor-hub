@@ -2,7 +2,8 @@
 workspace = false
 command = "cargo"
 args = [
-	"upgrade", "--locked", "-p", "--dry-run"
+	# run `cargo upgrade --dry-run` to check versions defined in [workspace.dependencies]
+	"outdated", "-w", "--root-deps-only"
 ]
 
 [tasks.test]
