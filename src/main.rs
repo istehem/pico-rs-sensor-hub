@@ -102,10 +102,10 @@ async fn break_beam_roller_task(
         } else {
             led.set_low();
 
-            beam_broken_at = Some(Instant::now());
-
             if let Some(seed) = seed {
                 roll_channel.send(seed).await;
+            } else {
+                beam_broken_at = Some(Instant::now());
             }
         }
         info!("Edge detected, level: {}", sensor.is_high());
