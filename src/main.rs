@@ -63,18 +63,22 @@ async fn main(spawner: Spawner) {
 
     let sensor = Input::new(p.PIN_21, Pull::Up);
 
-    spawner.spawn(ir_task(sensor, led, roll_channel)).unwrap();
+    spawner
+        .spawn(break_beam_roller_task(sensor, led, roll_channel))
+        .unwrap();
 
     let mut config = I2cConfig::default();
     config.frequency = I2C_FREQUENCY;
     let i2c = I2c::new_async(p.I2C1, p.PIN_7, p.PIN_6, Irqs, config);
     let i2c = I2C.init(i2c);
 
-    spawner.spawn(oled_task(i2c, roll_channel)).unwrap();
+    spawner
+        .spawn(play_and_draw_task(i2c, roll_channel))
+        .unwrap();
 }
 
 #[embassy_executor::task]
-async fn ir_task(
+async fn break_beam_roller_task(
     mut sensor: Input<'static>,
     led: &'static mut Output<'static>,
     roll_channel: &'static RollChannel,
@@ -109,7 +113,7 @@ async fn ir_task(
 }
 
 #[embassy_executor::task]
-async fn oled_task(
+async fn play_and_draw_task(
     i2c: &'static mut I2c<'static, I2C1, i2c::Async>,
     roll_channel: &'static RollChannel,
 ) {
