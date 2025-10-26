@@ -10,12 +10,15 @@ use embassy_rp::gpio;
 use embassy_rp::gpio::{Input, Pull};
 use embassy_rp::i2c::{self, Config as I2cConfig, I2c};
 use embassy_rp::peripherals::I2C1;
-use embassy_time::Timer;
+//use embassy_time::Timer;
 use embedded_graphics::draw_target::DrawTarget;
 use embedded_graphics::pixelcolor::BinaryColor;
 use gpio::{Level, Output};
 use ssd1306::mode::DisplayConfig;
 use ssd1306::{rotation::DisplayRotation, size::DisplaySize128x64, I2CDisplayInterface, Ssd1306};
+use static_cell::StaticCell;
+//use embassy_sync::channel::Channel;
+//use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 
 use embedded_alloc::LlffHeap;
 
@@ -25,7 +28,8 @@ use pico_display::messages;
 static HEAP: LlffHeap = LlffHeap::empty();
 
 static I2C: StaticCell<I2c<'static, I2C1, i2c::Async>> = StaticCell::new();
-use static_cell::StaticCell;
+//static CHANNEL: StaticCell<Channel<NoopRawMutex, u32, 4>> = StaticCell::new();
+static LED: StaticCell<Output<'static>> = StaticCell::new();
 
 bind_interrupts!(struct Irqs {
     I2C1_IRQ => i2c::InterruptHandler<I2C1>;
@@ -37,34 +41,30 @@ async fn main(spawner: Spawner) {
         unsafe { HEAP.init(cortex_m_rt::heap_start() as usize, 8 * 1024) }
     }
     let p = embassy_rp::init(Default::default());
-    let mut led = Output::new(p.PIN_25, Level::Low);
+
+    let led = Output::new(p.PIN_25, Level::Low);
+    let led = LED.init(led);
 
     let sensor = Input::new(p.PIN_21, Pull::Up);
-    spawner.spawn(ir_task(sensor)).unwrap();
+    spawner.spawn(ir_task(sensor, led)).unwrap();
 
     let config = I2cConfig::default();
     let i2c = I2c::new_async(p.I2C1, p.PIN_7, p.PIN_6, Irqs, config);
-
     let i2c = I2C.init(i2c);
 
     spawner.spawn(oled_task(i2c)).unwrap();
-
-    loop {
-        info!("led on!");
-        led.set_high();
-        Timer::after_secs(2).await;
-
-        info!("led off!");
-        led.set_low();
-        Timer::after_secs(1).await;
-    }
 }
 
 #[embassy_executor::task]
-async fn ir_task(mut sensor: Input<'static>) {
+async fn ir_task(mut sensor: Input<'static>, led: &'static mut Output<'static>) {
     loop {
         sensor.wait_for_any_edge().await;
-        defmt::info!("Edge detected, level: {}", sensor.is_high());
+        if sensor.is_high() {
+            led.set_high();
+        } else {
+            led.set_low();
+        }
+        info!("Edge detected, level: {}", sensor.is_high());
     }
 }
 
