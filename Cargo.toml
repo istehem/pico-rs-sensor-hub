@@ -7,42 +7,34 @@ name = "pico-rs-sensor-hub"
 version = "0.1.0"
 license = "MIT OR Apache-2.0"
 
+[package.metadata.cargo-machete]
+ignored = ["portable-atomic"]
+
 [dependencies]
 cortex-m-rt = "0.7"
-
 defmt = "1"
 defmt-rtt = "1"
-panic-probe = { version = "1", features = ["print-defmt"] }
-
-# We're using a Pico by default on this template
-ssd1306 = "0.10.0"
-
-game-logic = { path = "./crates/game-logic" }
-pico-display = { path = "./crates/pico-display" }
-embedded-graphics = { workspace = true }
-rand = { workspace = true }
 embedded-alloc = "0.6.0"
-u8g2-fonts = "0.7.2"
-
+embedded-graphics = { workspace = true }
 embassy-sync = { version = "0.7.2", features = ["defmt"] }
 embassy-executor = { version = "0.9.1", features = ["arch-cortex-m", "executor-thread", "executor-interrupt", "defmt"] }
 embassy-time = { version = "0.5.0", features = ["defmt", "defmt-timestamp-uptime"] }
 embassy-rp = { version = "0.8.0", features = ["defmt", "unstable-pac", "time-driver", "critical-section-impl", "rp2040", "rt"] }
-static_cell = "2.1.1"
+panic-probe = { version = "1", features = ["print-defmt"] }
 portable-atomic = { version = "1.0", features = ["critical-section"] }
+rand = { workspace = true }
+ssd1306 = "0.10.0"
+static_cell = "2.1.1"
+u8g2-fonts = { workspace = true }
+
+game-logic = { path = "./crates/game-logic" }
+pico-display = { path = "./crates/pico-display" }
 
 [workspace.dependencies]
 embedded-graphics = "0.8.1"
-num-traits = { version = "0.2.19", default-features = false }
 rand = { version = "0.9.2", features = ["small_rng"], default-features = false }
 trait-set = "0.3.0"
-
-# but you can use any BSP. Uncomment this to use the pro_micro_rp2040 BSP instead
-# sparkfun-pro-micro-rp2040 = "0.8"
-
-# If you're not going to use a Board Support Package you'll need these:
-# rp2040-hal = { version="0.10", features=["rt", "critical-section-impl"] }
-# rp2040-boot2 = "0.3"
+u8g2-fonts = "0.7.2"
 
 # cargo build/run
 [profile.dev]

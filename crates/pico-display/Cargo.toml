@@ -9,4 +9,4 @@ embedded-graphics = { workspace = true }
 rand = { workspace = true }
 num-traits = { version = "0.2.19", default-features = false }
 trait-set = "0.3.0"
-u8g2-fonts = "0.7.2"
+u8g2-fonts = { workspace = true }
