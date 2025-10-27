@@ -21,8 +21,8 @@ use embedded_graphics::pixelcolor::BinaryColor;
 use rand::rngs::SmallRng;
 use rand::SeedableRng;
 use ssd1306::{
-    mode::DisplayConfig, rotation::DisplayRotation, size::DisplaySize128x64, I2CDisplayInterface,
-    Ssd1306,
+    mode::DisplayConfigAsync, rotation::DisplayRotation, size::DisplaySize128x64,
+    I2CDisplayInterface, Ssd1306Async,
 };
 use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};
@@ -113,26 +113,25 @@ async fn play_and_draw_task(
     roll_channel: &'static RollChannel,
 ) {
     let interface = I2CDisplayInterface::new(i2c);
-    let mut display = Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
+    let mut display = Ssd1306Async::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
         .into_buffered_graphics_mode();
 
-    display.init().unwrap();
+    display.init().await.unwrap();
     display.clear(BinaryColor::Off).unwrap();
-    display.flush().unwrap();
 
     messages::medium_sized_centered_message(
         "Break the beam for\n at least one second\n to start the game.",
         &mut display,
     )
     .unwrap();
-    display.flush().unwrap();
+    display.flush().await.unwrap();
 
     let seed = roll_channel.receive().await;
     let mut game = Game::new(SmallRng::seed_from_u64(seed));
 
     loop {
         play_and_draw(&mut display, &mut game).unwrap();
-        display.flush().unwrap();
+        display.flush().await.unwrap();
         roll_channel.receive().await;
     }
 }
