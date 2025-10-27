@@ -57,7 +57,6 @@ async fn main(spawner: Spawner) {
     let roll_channel = ROLL_CHANNEL.init(Channel::new());
 
     let led = Output::new(p.PIN_25, Level::Low);
-
     let sensor = Input::new(p.PIN_21, Pull::Up);
 
     spawner
