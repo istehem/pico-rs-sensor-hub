@@ -41,9 +41,7 @@ type RollChannel = Channel<NoopRawMutex, u64, 4>;
 const I2C_FREQUENCY: u32 = 400_000;
 const ONE_SECOND_IN_MUS: u64 = 1000000;
 
-static I2C: StaticCell<I2c<'static, I2C1, i2c::Async>> = StaticCell::new();
 static ROLL_CHANNEL: StaticCell<RollChannel> = StaticCell::new();
-static LED: StaticCell<Output<'static>> = StaticCell::new();
 
 bind_interrupts!(struct Irqs {
     I2C1_IRQ => i2c::InterruptHandler<I2C1>;
@@ -59,7 +57,6 @@ async fn main(spawner: Spawner) {
     let roll_channel = ROLL_CHANNEL.init(Channel::new());
 
     let led = Output::new(p.PIN_25, Level::Low);
-    let led = LED.init(led);
 
     let sensor = Input::new(p.PIN_21, Pull::Up);
 
@@ -70,7 +67,6 @@ async fn main(spawner: Spawner) {
     let mut config = I2cConfig::default();
     config.frequency = I2C_FREQUENCY;
     let i2c = I2c::new_async(p.I2C1, p.PIN_7, p.PIN_6, Irqs, config);
-    let i2c = I2C.init(i2c);
 
     spawner
         .spawn(play_and_draw_task(i2c, roll_channel))
@@ -80,7 +76,7 @@ async fn main(spawner: Spawner) {
 #[embassy_executor::task]
 async fn break_beam_roller_task(
     mut sensor: Input<'static>,
-    led: &'static mut Output<'static>,
+    mut led: Output<'static>,
     roll_channel: &'static RollChannel,
 ) {
     let mut seed: Option<u64> = None;
@@ -114,7 +110,7 @@ async fn break_beam_roller_task(
 
 #[embassy_executor::task]
 async fn play_and_draw_task(
-    i2c: &'static mut I2c<'static, I2C1, i2c::Async>,
+    i2c: I2c<'static, I2C1, i2c::Async>,
     roll_channel: &'static RollChannel,
 ) {
     let interface = I2CDisplayInterface::new(i2c);
