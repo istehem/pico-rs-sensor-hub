@@ -113,12 +113,12 @@ async fn play_and_draw_task(
     roll_channel: &'static RollChannel,
 ) {
     let interface = I2CDisplayInterface::new(i2c);
+
     let mut display = Ssd1306Async::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
         .into_buffered_graphics_mode();
-
     display.init().await.unwrap();
-    display.clear(BinaryColor::Off).unwrap();
 
+    display.clear(BinaryColor::Off).unwrap();
     messages::medium_sized_centered_message(
         "Break the beam for\n at least one second\n to start the game.",
         &mut display,
