@@ -13,7 +13,7 @@ use embassy_rp::i2c::{self, Config as I2cConfig, I2c};
 use embassy_rp::peripherals::I2C1;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_sync::channel::Channel;
-use embassy_time::Instant;
+use embassy_time::{Instant, Timer};
 use embedded_alloc::LlffHeap;
 use embedded_graphics::draw_target::DrawTarget;
 use embedded_graphics::pixelcolor::BinaryColor;
@@ -133,6 +133,21 @@ async fn play_and_draw_task(
         play_and_draw(&mut display, &mut game).unwrap();
         display.flush().await.unwrap();
         roll_channel.receive().await;
+    }
+}
+
+#[embassy_executor::task]
+async fn blink_display_task(i2c: I2c<'static, I2C1, i2c::Async>) {
+    let interface = I2CDisplayInterface::new(i2c);
+
+    let mut display = Ssd1306Async::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
+        .into_buffered_graphics_mode();
+    display.init().await.unwrap();
+
+    loop {
+        display.set_display_on(false).await.unwrap();
+        Timer::after_millis(150).await;
+        display.set_display_on(true).await.unwrap();
     }
 }
 
