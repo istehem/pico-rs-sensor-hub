@@ -16,7 +16,6 @@ use embassy_sync::channel::Channel;
 use embassy_time::Instant;
 use embedded_alloc::LlffHeap;
 use embedded_graphics::draw_target::DrawTarget;
-use embedded_graphics::geometry::OriginDimensions;
 use embedded_graphics::pixelcolor::BinaryColor;
 use rand::rngs::SmallRng;
 use rand::SeedableRng;
@@ -28,6 +27,7 @@ use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};
 
 use game_logic::two_four_eighteen::{Game, NumberOfDice};
+use pico_display::aliases::Display;
 use pico_display::messages;
 
 mod error;
@@ -138,7 +138,7 @@ async fn play_and_draw_task(
 
 fn play_and_draw<T>(display: &mut T, game: &mut Game) -> Result<(), DrawError<T::Error>>
 where
-    T: DrawTarget<Color = BinaryColor> + OriginDimensions,
+    T: Display,
 {
     display.clear(BinaryColor::Off)?;
     if game.dice_left > NumberOfDice::Zero {
