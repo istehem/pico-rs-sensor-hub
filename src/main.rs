@@ -139,8 +139,8 @@ async fn play_and_draw_task(roll_channel: &'static RollChannel) {
 
     loop {
         {
-            let mut display_opt = DISPLAY.lock().await;
-            if let Some(display) = display_opt.as_mut() {
+            let mut display = DISPLAY.lock().await;
+            if let Some(display) = display.as_mut() {
                 display.set_display_on(true).await.unwrap();
                 play_and_draw(display, &mut game).unwrap();
                 display.flush().await.unwrap();
@@ -156,8 +156,8 @@ async fn blink_display_task() {
 
     loop {
         {
-            let mut display_opt = DISPLAY.lock().await;
-            if let Some(display) = display_opt.as_mut() {
+            let mut display = DISPLAY.lock().await;
+            if let Some(display) = display.as_mut() {
                 display.set_display_on(false).await.unwrap();
             }
         }
