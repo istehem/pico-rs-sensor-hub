@@ -5,7 +5,6 @@ extern crate alloc;
 
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use core::borrow::BorrowMut;
 use defmt::info;
 use embassy_executor::Spawner;
 use embassy_rp::bind_interrupts;
@@ -86,7 +85,7 @@ async fn main(spawner: Spawner) {
     display.clear(BinaryColor::Off).unwrap();
     messages::medium_sized_centered_message(
         "Break the beam for\n at least one second\n to start the game.",
-        DISPLAY.lock().await.borrow_mut().as_mut().unwrap(),
+        &mut display,
     )
     .unwrap();
     display.flush().await.unwrap();
@@ -158,12 +157,34 @@ async fn blink_display_task() {
         {
             let mut display = DISPLAY.lock().await;
             if let Some(display) = display.as_mut() {
-                display.set_display_on(false).await.unwrap();
+                display.set_display_on(display_on).await.unwrap();
             }
         }
         display_on = !display_on;
         Timer::after_millis(500).await;
     }
+    /*
+        loop {
+            // Always check for commands
+            match CHANNEL.try_receive() {
+                Ok(Command::Pause) => running = false,
+                Ok(Command::Resume) => running = true,
+                _ => {}
+            }
+
+            if running {
+                defmt::info!("Working...");
+                Timer::after(Duration::from_millis(200)).await;
+            } else {
+                defmt::info!("Paused, waiting...");
+                // Block until a command arrives
+                match CHANNEL.receive().await {
+                    Command::Resume => running = true,
+                    Command::Pause => {} // Stay paused
+                }
+            }
+        }
+    */
 }
 
 fn play_and_draw<T>(display: &mut T, game: &mut Game) -> Result<(), DrawError<T::Error>>
