@@ -5,6 +5,7 @@ extern crate alloc;
 
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
+use core::ops::DerefMut;
 use defmt::info;
 use embassy_executor::Spawner;
 use embassy_rp::bind_interrupts;
@@ -12,7 +13,6 @@ use embassy_rp::gpio::{Input, Level, Output, Pull};
 use embassy_rp::i2c::{self, Config as I2cConfig, I2c};
 use embassy_rp::peripherals::I2C1;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
-use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::channel::Channel;
 use embassy_sync::mutex::Mutex;
 use embassy_time::{Instant, Timer};
@@ -45,14 +45,14 @@ type Display = Ssd1306Async<
     DisplaySize128x64,
     BufferedGraphicsModeAsync<DisplaySize128x64>,
 >;
+type DisplayMutex = Mutex<NoopRawMutex, Display>;
 type RollChannel = Channel<NoopRawMutex, u64, 4>;
 
 const I2C_FREQUENCY: u32 = 400_000;
 const ONE_SECOND_IN_MUS: u64 = 1000000;
 
 static ROLL_CHANNEL: StaticCell<RollChannel> = StaticCell::new();
-
-static DISPLAY: Mutex<ThreadModeRawMutex, Option<Display>> = Mutex::new(None);
+static DISPLAY: StaticCell<DisplayMutex> = StaticCell::new();
 
 bind_interrupts!(struct Irqs {
     I2C1_IRQ => i2c::InterruptHandler<I2C1>;
@@ -90,10 +90,12 @@ async fn main(spawner: Spawner) {
     .unwrap();
     display.flush().await.unwrap();
 
-    *DISPLAY.lock().await = Some(display);
+    let display = DISPLAY.init(Mutex::new(display));
 
-    spawner.spawn(play_and_draw_task(roll_channel)).unwrap();
-    spawner.spawn(blink_display_task()).unwrap();
+    spawner
+        .spawn(play_and_draw_task(display, roll_channel))
+        .unwrap();
+    spawner.spawn(blink_display_task(display)).unwrap();
 }
 
 #[embassy_executor::task]
@@ -132,36 +134,33 @@ async fn break_beam_roller_task(
 }
 
 #[embassy_executor::task]
-async fn play_and_draw_task(roll_channel: &'static RollChannel) {
+async fn play_and_draw_task(display: &'static DisplayMutex, roll_channel: &'static RollChannel) {
     let seed = roll_channel.receive().await;
     let mut game = Game::new(SmallRng::seed_from_u64(seed));
 
     loop {
         {
-            let mut display = DISPLAY.lock().await;
-            if let Some(display) = display.as_mut() {
-                display.set_display_on(true).await.unwrap();
-                play_and_draw(display, &mut game).unwrap();
-                display.flush().await.unwrap();
-            }
+            let mut display = display.lock().await;
+            display.set_display_on(true).await.unwrap();
+            play_and_draw(display.deref_mut(), &mut game).unwrap();
+            display.flush().await.unwrap();
         }
         roll_channel.receive().await;
     }
 }
 
 #[embassy_executor::task]
-async fn blink_display_task() {
+async fn blink_display_task(display: &'static DisplayMutex) {
     let mut display_on = false;
 
     loop {
         {
-            let mut display = DISPLAY.lock().await;
-            if let Some(display) = display.as_mut() {
-                display.set_display_on(display_on).await.unwrap();
-            }
+            let mut display = display.lock().await;
+            display.set_display_on(display_on).await.unwrap();
         }
+
         display_on = !display_on;
-        Timer::after_millis(500).await;
+        Timer::after_millis(200).await;
     }
     /*
         loop {
