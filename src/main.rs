@@ -161,6 +161,7 @@ async fn play_and_draw_task(
     loop {
         if game.dice_left == NumberOfDice::Five {
             display_command_channel.send(DisplayCommand::Solid).await;
+            display.lock().await.set_invert(false).await.unwrap();
         }
         let game_over = {
             let mut display = display.lock().await;
