@@ -181,28 +181,27 @@ async fn blink_display_task(
     display: &'static DisplayMutex,
     display_command_channel: &'static DisplayCommandChannel,
 ) {
-    let mut display_on = true;
+    let mut invert_display = false;
     let mut display_state = DisplayCommand::Solid;
 
     loop {
         display_state = match display_command_channel.try_receive() {
             Ok(DisplayCommand::Blink) => DisplayCommand::Blink,
             Ok(DisplayCommand::Solid) => {
-                display.lock().await.set_display_on(true).await.unwrap();
+                display.lock().await.set_invert(false).await.unwrap();
                 DisplayCommand::Solid
             }
             _ => display_state,
         };
 
         if display_state == DisplayCommand::Blink {
-            // change to set_invert
             display
                 .lock()
                 .await
-                .set_display_on(display_on)
+                .set_invert(invert_display)
                 .await
                 .unwrap();
-            display_on = !display_on;
+            invert_display = !invert_display;
         }
 
         Timer::after_millis(500).await;
