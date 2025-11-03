@@ -58,6 +58,15 @@ bind_interrupts!(struct Irqs {
     I2C1_IRQ => i2c::InterruptHandler<I2C1>;
 });
 
+#[derive(PartialEq)]
+enum DisplayCommand {
+    Blink,
+    Solid,
+}
+
+type DisplayCommandChannel = Channel<NoopRawMutex, DisplayCommand, 4>;
+static DISPLAY_COMMAND_CHANNEL: StaticCell<DisplayCommandChannel> = StaticCell::new();
+
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
     {
@@ -91,11 +100,18 @@ async fn main(spawner: Spawner) {
     display.flush().await.unwrap();
 
     let display = DISPLAY.init(Mutex::new(display));
+    let display_command_channel = DISPLAY_COMMAND_CHANNEL.init(Channel::new());
 
     spawner
-        .spawn(play_and_draw_task(display, roll_channel))
+        .spawn(play_and_draw_task(
+            display,
+            roll_channel,
+            display_command_channel,
+        ))
         .unwrap();
-    spawner.spawn(blink_display_task(display)).unwrap();
+    spawner
+        .spawn(blink_display_task(display, display_command_channel))
+        .unwrap();
 }
 
 #[embassy_executor::task]
@@ -134,59 +150,66 @@ async fn break_beam_roller_task(
 }
 
 #[embassy_executor::task]
-async fn play_and_draw_task(display: &'static DisplayMutex, roll_channel: &'static RollChannel) {
+async fn play_and_draw_task(
+    display: &'static DisplayMutex,
+    roll_channel: &'static RollChannel,
+    display_command_channel: &'static DisplayCommandChannel,
+) {
     let seed = roll_channel.receive().await;
     let mut game = Game::new(SmallRng::seed_from_u64(seed));
 
     loop {
-        {
+        if game.dice_left == NumberOfDice::Five {
+            display_command_channel.send(DisplayCommand::Solid).await;
+        }
+        let game_over = {
             let mut display = display.lock().await;
             display.set_display_on(true).await.unwrap();
-            play_and_draw(display.deref_mut(), &mut game).unwrap();
+            let game_over = play_and_draw(display.deref_mut(), &mut game).unwrap();
             display.flush().await.unwrap();
+            game_over
+        };
+        if game_over {
+            display_command_channel.send(DisplayCommand::Blink).await;
         }
         roll_channel.receive().await;
     }
 }
 
 #[embassy_executor::task]
-async fn blink_display_task(display: &'static DisplayMutex) {
-    let mut display_on = false;
+async fn blink_display_task(
+    display: &'static DisplayMutex,
+    display_command_channel: &'static DisplayCommandChannel,
+) {
+    let mut display_on = true;
+    let mut display_state = DisplayCommand::Solid;
 
     loop {
-        {
-            let mut display = display.lock().await;
-            display.set_display_on(display_on).await.unwrap();
+        display_state = match display_command_channel.try_receive() {
+            Ok(DisplayCommand::Blink) => DisplayCommand::Blink,
+            Ok(DisplayCommand::Solid) => {
+                display.lock().await.set_display_on(true).await.unwrap();
+                DisplayCommand::Solid
+            }
+            _ => display_state,
+        };
+
+        if display_state == DisplayCommand::Blink {
+            // change to set_invert
+            display
+                .lock()
+                .await
+                .set_display_on(display_on)
+                .await
+                .unwrap();
+            display_on = !display_on;
         }
 
-        display_on = !display_on;
-        Timer::after_millis(200).await;
+        Timer::after_millis(500).await;
     }
-    /*
-        loop {
-            // Always check for commands
-            match CHANNEL.try_receive() {
-                Ok(Command::Pause) => running = false,
-                Ok(Command::Resume) => running = true,
-                _ => {}
-            }
-
-            if running {
-                defmt::info!("Working...");
-                Timer::after(Duration::from_millis(200)).await;
-            } else {
-                defmt::info!("Paused, waiting...");
-                // Block until a command arrives
-                match CHANNEL.receive().await {
-                    Command::Resume => running = true,
-                    Command::Pause => {} // Stay paused
-                }
-            }
-        }
-    */
 }
 
-fn play_and_draw<T>(display: &mut T, game: &mut Game) -> Result<(), DrawError<T::Error>>
+fn play_and_draw<T>(display: &mut T, game: &mut Game) -> Result<bool, DrawError<T::Error>>
 where
     T: DisplayTrait,
 {
@@ -195,6 +218,7 @@ where
         game.roll();
         game.rolled.draw(display)?;
         info!("current score: {}", game.score());
+        return Ok(false);
     } else {
         let mut picked: Vec<String> = game
             .picked
@@ -213,6 +237,6 @@ where
             messages::big_centered_message(score.to_string().as_str(), display)?;
         }
         game.reset();
+        return Ok(true);
     }
-    Ok(())
 }
