@@ -8,6 +8,7 @@ use alloc::vec::Vec;
 use core::ops::DerefMut;
 use defmt::info;
 use embassy_executor::Spawner;
+use embassy_futures::select::{select, Either};
 use embassy_rp::bind_interrupts;
 use embassy_rp::gpio::{Input, Level, Output, Pull};
 use embassy_rp::i2c::{self, Config as I2cConfig, I2c};
@@ -161,11 +162,9 @@ async fn play_and_draw_task(
     loop {
         if game.dice_left == NumberOfDice::Five {
             display_command_channel.send(DisplayCommand::Solid).await;
-            display.lock().await.set_invert(false).await.unwrap();
         }
         let game_over = {
             let mut display = display.lock().await;
-            display.set_display_on(true).await.unwrap();
             let game_over = play_and_draw(display.deref_mut(), &mut game).unwrap();
             display.flush().await.unwrap();
             game_over
@@ -186,26 +185,29 @@ async fn blink_display_task(
     let mut display_state = DisplayCommand::Solid;
 
     loop {
-        display_state = match display_command_channel.try_receive() {
-            Ok(DisplayCommand::Blink) => DisplayCommand::Blink,
-            Ok(DisplayCommand::Solid) => {
-                display.lock().await.set_invert(false).await.unwrap();
-                DisplayCommand::Solid
+        match select(Timer::after_millis(750), display_command_channel.receive()).await {
+            Either::First(_) => {
+                if display_state == DisplayCommand::Blink {
+                    invert_display = !invert_display;
+                    display
+                        .lock()
+                        .await
+                        .set_invert(invert_display)
+                        .await
+                        .unwrap();
+                }
             }
-            _ => display_state,
-        };
-
-        if display_state == DisplayCommand::Blink {
-            display
-                .lock()
-                .await
-                .set_invert(invert_display)
-                .await
-                .unwrap();
-            invert_display = !invert_display;
+            Either::Second(command) => {
+                display_state = command;
+                invert_display = display_state != DisplayCommand::Solid;
+                display
+                    .lock()
+                    .await
+                    .set_invert(invert_display)
+                    .await
+                    .unwrap();
+            }
         }
-
-        Timer::after_millis(500).await;
     }
 }
 
