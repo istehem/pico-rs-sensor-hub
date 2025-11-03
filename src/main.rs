@@ -218,7 +218,7 @@ where
         game.roll();
         game.rolled.draw(display)?;
         info!("current score: {}", game.score());
-        return Ok(false);
+        Ok(false)
     } else {
         let mut picked: Vec<String> = game
             .picked
@@ -237,6 +237,6 @@ where
             messages::big_centered_message(score.to_string().as_str(), display)?;
         }
         game.reset();
-        return Ok(true);
+        Ok(true)
     }
 }
