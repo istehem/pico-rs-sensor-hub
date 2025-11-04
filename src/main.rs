@@ -61,13 +61,13 @@ bind_interrupts!(struct Irqs {
 });
 
 #[derive(PartialEq)]
-enum DisplayCommand {
+enum DisplayState {
     Blink,
     Solid,
 }
 
-type DisplayCommandChannel = Channel<NoopRawMutex, DisplayCommand, 4>;
-static DISPLAY_COMMAND_CHANNEL: StaticCell<DisplayCommandChannel> = StaticCell::new();
+type DisplayStateChannel = Channel<NoopRawMutex, DisplayState, 4>;
+static DISPLAY_STATE_CHANNEL: StaticCell<DisplayStateChannel> = StaticCell::new();
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
@@ -102,7 +102,7 @@ async fn main(spawner: Spawner) {
     display.flush().await.unwrap();
 
     let display = DISPLAY.init(Mutex::new(display));
-    let display_command_channel = DISPLAY_COMMAND_CHANNEL.init(Channel::new());
+    let display_command_channel = DISPLAY_STATE_CHANNEL.init(Channel::new());
 
     spawner
         .spawn(play_and_draw_task(
@@ -112,7 +112,7 @@ async fn main(spawner: Spawner) {
         ))
         .unwrap();
     spawner
-        .spawn(blink_display_task(display, display_command_channel))
+        .spawn(display_state_handler_task(display, display_command_channel))
         .unwrap();
 }
 
@@ -155,14 +155,14 @@ async fn break_beam_roller_task(
 async fn play_and_draw_task(
     display: &'static DisplayMutex,
     roll_channel: &'static RollChannel,
-    display_command_channel: &'static DisplayCommandChannel,
+    display_state_channel: &'static DisplayStateChannel,
 ) {
     let seed = roll_channel.receive().await;
     let mut game = Game::new(SmallRng::seed_from_u64(seed));
 
     loop {
         if game.dice_left == NumberOfDice::Five {
-            display_command_channel.send(DisplayCommand::Solid).await;
+            display_state_channel.send(DisplayState::Solid).await;
         }
         let game_over = {
             let mut display = display.lock().await;
@@ -171,31 +171,31 @@ async fn play_and_draw_task(
             game_over
         };
         if game_over {
-            display_command_channel.send(DisplayCommand::Blink).await;
+            display_state_channel.send(DisplayState::Blink).await;
         }
         roll_channel.receive().await;
     }
 }
 
 #[embassy_executor::task]
-async fn blink_display_task(
+async fn display_state_handler_task(
     display: &'static DisplayMutex,
-    display_command_channel: &'static DisplayCommandChannel,
+    display_state_channel: &'static DisplayStateChannel,
 ) {
     let mut invert_display = false;
-    let mut display_state = DisplayCommand::Solid;
+    let mut display_state = DisplayState::Solid;
 
     loop {
-        match select(Timer::after_millis(750), display_command_channel.receive()).await {
+        match select(Timer::after_millis(750), display_state_channel.receive()).await {
             Either::First(_) => {
-                if display_state == DisplayCommand::Blink {
+                if display_state == DisplayState::Blink {
                     invert_display = !invert_display;
                     set_invert_display(display, invert_display).await.unwrap();
                 }
             }
             Either::Second(command) => {
                 display_state = command;
-                invert_display = display_state != DisplayCommand::Solid;
+                invert_display = display_state != DisplayState::Solid;
                 set_invert_display(display, invert_display).await.unwrap();
             }
         }
