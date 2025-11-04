@@ -17,7 +17,7 @@ impl Dice {
         Self { dice: Vec::new() }
     }
 
-    pub fn from(dice: Vec<Die>) -> Self {
+    fn from(dice: Vec<Die>) -> Self {
         Self { dice }
     }
 
@@ -35,14 +35,13 @@ impl Dice {
 
     pub fn pick(&self, face_value: FaceValue, max_hits: Option<usize>) -> Self {
         let max_hits = max_hits.unwrap_or(self.dice.len());
-        let dice = self
-            .dice
+        self.dice
             .iter()
             .filter(|&die| die.value == face_value)
             .take(max_hits)
             .cloned()
-            .collect();
-        Self::from(dice)
+            .collect::<Vec<_>>()
+            .into()
     }
 
     pub fn max(&self) -> Option<Die> {
@@ -117,4 +116,10 @@ fn find_best_grid(number_of_entries: u32, width: u32, height: u32) -> (u32, u32,
     }
 
     (best_colums, best_rows, best_size)
+}
+
+impl From<Vec<Die>> for Dice {
+    fn from(value: Vec<Die>) -> Self {
+        Dice::from(value)
+    }
 }
