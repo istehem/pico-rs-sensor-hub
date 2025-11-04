@@ -102,17 +102,17 @@ async fn main(spawner: Spawner) {
     display.flush().await.unwrap();
 
     let display = DISPLAY.init(Mutex::new(display));
-    let display_command_channel = DISPLAY_STATE_CHANNEL.init(Channel::new());
+    let display_state_channel = DISPLAY_STATE_CHANNEL.init(Channel::new());
 
     spawner
         .spawn(play_and_draw_task(
             display,
             roll_channel,
-            display_command_channel,
+            display_state_channel,
         ))
         .unwrap();
     spawner
-        .spawn(display_state_handler_task(display, display_command_channel))
+        .spawn(display_state_handler_task(display, display_state_channel))
         .unwrap();
 }
 
@@ -193,8 +193,8 @@ async fn display_state_handler_task(
                     set_invert_display(display, invert_display).await.unwrap();
                 }
             }
-            Either::Second(command) => {
-                display_state = command;
+            Either::Second(state) => {
+                display_state = state;
                 invert_display = display_state != DisplayState::Solid;
                 set_invert_display(display, invert_display).await.unwrap();
             }
