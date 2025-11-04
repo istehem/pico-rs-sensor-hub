@@ -7,6 +7,7 @@ use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::ops::DerefMut;
 use defmt::info;
+use display_interface::DisplayError;
 use embassy_executor::Spawner;
 use embassy_futures::select::{select, Either};
 use embassy_rp::bind_interrupts;
@@ -189,26 +190,20 @@ async fn blink_display_task(
             Either::First(_) => {
                 if display_state == DisplayCommand::Blink {
                     invert_display = !invert_display;
-                    display
-                        .lock()
-                        .await
-                        .set_invert(invert_display)
-                        .await
-                        .unwrap();
+                    set_invert_display(display, invert_display).await.unwrap();
                 }
             }
             Either::Second(command) => {
                 display_state = command;
                 invert_display = display_state != DisplayCommand::Solid;
-                display
-                    .lock()
-                    .await
-                    .set_invert(invert_display)
-                    .await
-                    .unwrap();
+                set_invert_display(display, invert_display).await.unwrap();
             }
         }
     }
+}
+
+async fn set_invert_display(display: &DisplayMutex, invert: bool) -> Result<(), DisplayError> {
+    display.lock().await.set_invert(invert).await
 }
 
 fn play_and_draw<T>(display: &mut T, game: &mut Game) -> Result<bool, DrawError<T::Error>>
