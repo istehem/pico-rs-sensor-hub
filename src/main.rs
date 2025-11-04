@@ -224,6 +224,7 @@ where
     } else {
         let mut picked: Vec<String> = game
             .picked
+            .dice
             .iter()
             .map(|die| die.value.as_u8().to_string())
             .collect();
@@ -236,7 +237,7 @@ where
         } else if game.has_won() {
             messages::big_centered_message("18!\nYou Win!", display)?;
         } else {
-            messages::big_centered_message(score.to_string().as_str(), display)?;
+            game.picked.draw(display)?;
         }
         game.reset();
         Ok(true)

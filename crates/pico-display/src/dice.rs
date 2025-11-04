@@ -9,12 +9,16 @@ use crate::aliases::Display;
 use crate::die::{Die, FaceValue};
 
 pub struct Dice {
-    dice: Vec<Die>,
+    pub dice: Vec<Die>,
 }
 
 impl Dice {
     pub fn empty() -> Self {
-        Dice { dice: Vec::new() }
+        Self { dice: Vec::new() }
+    }
+
+    pub fn from(dice: Vec<Die>) -> Self {
+        Self { dice }
     }
 
     pub fn roll<F>(mut face_value: F, number_of_dice: u32) -> Self
@@ -29,14 +33,16 @@ impl Dice {
         Dice { dice }
     }
 
-    pub fn pick(&self, face_value: FaceValue, max_hits: Option<usize>) -> Vec<Die> {
+    pub fn pick(&self, face_value: FaceValue, max_hits: Option<usize>) -> Self {
         let max_hits = max_hits.unwrap_or(self.dice.len());
-        self.dice
+        let dice = self
+            .dice
             .iter()
             .filter(|&die| die.value == face_value)
             .take(max_hits)
             .cloned()
-            .collect()
+            .collect();
+        Self::from(dice)
     }
 
     pub fn max(&self) -> Option<Die> {
@@ -73,6 +79,22 @@ impl Dice {
             die.draw(&mut target.cropped(&area))?;
         }
         Ok(())
+    }
+
+    pub fn append(&mut self, dice: &mut Dice) {
+        self.dice.append(&mut dice.dice);
+    }
+
+    pub fn len(&self) -> usize {
+        self.dice.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.dice.is_empty()
+    }
+
+    pub fn push(&mut self, die: Die) {
+        self.dice.push(die);
     }
 }
 

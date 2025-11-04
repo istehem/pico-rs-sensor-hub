@@ -5,9 +5,6 @@ use pico_display::die::{Die, FaceValue};
 use rand::Rng;
 use rand::rngs::SmallRng;
 
-extern crate alloc;
-use alloc::vec::Vec;
-
 impl fmt::Display for NumberOfDice {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
@@ -66,7 +63,7 @@ impl Sub<u8> for NumberOfDice {
 pub struct Game {
     pub dice_left: NumberOfDice,
     pub small_rng: SmallRng,
-    pub picked: Vec<Die>,
+    pub picked: Dice,
     pub rolled: Dice,
 }
 
@@ -75,14 +72,14 @@ impl Game {
         Self {
             dice_left: NumberOfDice::Five,
             small_rng,
-            picked: Vec::new(),
+            picked: Dice::empty(),
             rolled: Dice::empty(),
         }
     }
 
     pub fn reset(&mut self) {
         self.dice_left = NumberOfDice::Five;
-        self.picked = Vec::new();
+        self.picked = Dice::empty();
         self.rolled = Dice::empty();
     }
 
@@ -93,7 +90,7 @@ impl Game {
         let face_value = || self.small_rng.random();
         let dice = Dice::roll(face_value, self.dice_left.as_u8() as u32);
 
-        let mut picked = Vec::new();
+        let mut picked = Dice::empty();
         picked.append(&mut self.picked);
 
         if !has_four(&picked) {
@@ -122,6 +119,7 @@ impl Game {
             return -1;
         }
         self.picked
+            .dice
             .iter()
             .fold(0, |acc, &die| acc + die.value.as_u8()) as i8
             - NumberOfDice::Four.as_u8() as i8
@@ -137,16 +135,16 @@ impl Game {
     }
 }
 
-fn has_fish(dice: &[Die]) -> bool {
+fn has_fish(dice: &Dice) -> bool {
     !(has_four(dice) && has_two(dice))
 }
 
-fn has_four(dice: &[Die]) -> bool {
-    has(dice, FaceValue::Four)
+fn has_four(dice: &Dice) -> bool {
+    has(&dice.dice, FaceValue::Four)
 }
 
-fn has_two(dice: &[Die]) -> bool {
-    has(dice, FaceValue::Two)
+fn has_two(dice: &Dice) -> bool {
+    has(&dice.dice, FaceValue::Two)
 }
 
 fn has(dice: &[Die], face_value: FaceValue) -> bool {
