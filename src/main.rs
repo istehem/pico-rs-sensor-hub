@@ -10,23 +10,23 @@ use defmt::info;
 use display_interface::DisplayError;
 use embassy_executor::Spawner;
 use embassy_futures::select::{select, Either};
-use embassy_rp::bind_interrupts;
-use embassy_rp::gpio::{Input, Level, Output, Pull};
-use embassy_rp::i2c::{self, Config as I2cConfig, I2c};
-use embassy_rp::peripherals::I2C1;
-use embassy_sync::blocking_mutex::raw::NoopRawMutex;
-use embassy_sync::channel::Channel;
-use embassy_sync::mutex::Mutex;
+use embassy_rp::{
+    bind_interrupts,
+    gpio::{Input, Level, Output, Pull},
+    i2c::{self, Config as I2cConfig, I2c},
+    peripherals::I2C1,
+};
+use embassy_sync::{blocking_mutex::raw::NoopRawMutex, channel::Channel, mutex::Mutex};
 use embassy_time::{Instant, Timer};
 use embedded_alloc::LlffHeap;
-use embedded_graphics::draw_target::DrawTarget;
-use embedded_graphics::pixelcolor::BinaryColor;
+use embedded_graphics::{draw_target::DrawTarget, pixelcolor::BinaryColor};
 use rand::rngs::SmallRng;
 use rand::SeedableRng;
-use ssd1306::mode::BufferedGraphicsModeAsync;
-use ssd1306::prelude::I2CInterface;
 use ssd1306::{
-    mode::DisplayConfigAsync, rotation::DisplayRotation, size::DisplaySize128x64,
+    mode::{BufferedGraphicsModeAsync, DisplayConfigAsync},
+    prelude::I2CInterface,
+    rotation::DisplayRotation,
+    size::DisplaySize128x64,
     I2CDisplayInterface, Ssd1306Async,
 };
 use static_cell::StaticCell;
