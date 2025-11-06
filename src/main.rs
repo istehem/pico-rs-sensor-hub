@@ -161,7 +161,7 @@ async fn play_and_draw_task(
     let seed = roll_channel.receive().await;
     let mut game = Game::new(SmallRng::seed_from_u64(seed));
 
-    let buffer = [BinaryColor::Off; 1024];
+    let buffer = [BinaryColor::Off; 8192];
     let mut framebuffer = FrameBuf::new(buffer, 128, 64);
 
     loop {
