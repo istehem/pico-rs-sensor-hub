@@ -5,7 +5,6 @@ extern crate alloc;
 
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use core::ops::DerefMut;
 use defmt::info;
 use display_interface::DisplayError;
 use embassy_executor::Spawner;
@@ -31,6 +30,8 @@ use ssd1306::{
 };
 use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};
+
+use embedded_graphics_framebuf::FrameBuf;
 
 use game_logic::two_four_eighteen::{Game, NumberOfDice};
 use pico_display::aliases::Display as DisplayTrait;
@@ -160,13 +161,17 @@ async fn play_and_draw_task(
     let seed = roll_channel.receive().await;
     let mut game = Game::new(SmallRng::seed_from_u64(seed));
 
+    let buffer = [BinaryColor::Off; 1024];
+    let mut framebuffer = FrameBuf::new(buffer, 128, 64);
+
     loop {
         if game.dice_left == NumberOfDice::Five {
             display_state_channel.send(DisplayState::Solid).await;
         }
         let game_over = {
             let mut display = display.lock().await;
-            let game_over = play_and_draw(display.deref_mut(), &mut game).unwrap();
+            let game_over = play_and_draw(&mut framebuffer, &mut game).unwrap();
+            display.draw_iter(framebuffer.into_iter()).unwrap();
             display.flush().await.unwrap();
             game_over
         };

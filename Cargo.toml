@@ -17,6 +17,7 @@ defmt-rtt = "1"
 display-interface = "0.5.0"
 embedded-alloc = "0.6.0"
 embedded-graphics = { workspace = true }
+embedded-graphics-framebuf = "0.5.0"
 embassy-sync = { version = "0.7.2", features = ["defmt"] }
 embassy-executor = { version = "0.9.1", features = ["arch-cortex-m", "executor-thread", "executor-interrupt", "defmt"] }
 embassy-futures = "0.1.2"
