@@ -9,7 +9,7 @@ use core::ops::DerefMut;
 use defmt::info;
 use display_interface::DisplayError;
 use embassy_executor::Spawner;
-use embassy_futures::select::{select, Either};
+use embassy_futures::select::{select, select3, Either, Either3};
 use embassy_rp::{
     bind_interrupts,
     gpio::{Input, Level, Output, Pull},
@@ -71,6 +71,10 @@ enum DisplayState {
 type DisplayStateChannel = Channel<NoopRawMutex, DisplayState, 4>;
 static DISPLAY_STATE_CHANNEL: StaticCell<DisplayStateChannel> = StaticCell::new();
 
+type DisplayBuffer = [BinaryColor; 8192];
+type DisplayBufferChannel = Channel<NoopRawMutex, DisplayBuffer, 1>;
+static DISPLAY_BUFFER_CHANNEL: StaticCell<DisplayBufferChannel> = StaticCell::new();
+
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
     {
@@ -116,8 +120,14 @@ async fn main(spawner: Spawner) {
     spawner
         .spawn(display_state_handler_task(display, display_state_channel))
         .unwrap();
+
+    let display_buffer_channel = DISPLAY_BUFFER_CHANNEL.init(Channel::new());
     spawner
-        .spawn(display_toggler_task(display, display_state_channel))
+        .spawn(display_toggler_task(
+            display,
+            display_state_channel,
+            display_buffer_channel,
+        ))
         .unwrap();
 }
 
@@ -186,12 +196,14 @@ async fn play_and_draw_task(
 enum ToggleState {
     YouWin,
     Fish,
+    Result,
 }
 
 #[embassy_executor::task]
 async fn display_toggler_task(
     display: &'static DisplayMutex,
     display_state_channel: &'static DisplayStateChannel,
+    display_buffer_channel: &'static DisplayBufferChannel,
 ) {
     let mut toggle_state = ToggleState::YouWin;
     let mut display_state = DisplayState::Solid;
@@ -199,13 +211,20 @@ async fn display_toggler_task(
     let buffer = [BinaryColor::Off; 8192];
     let mut you_win_framebuffer = FrameBuf::new(buffer, 128, 64);
     let mut fish_framebuffer = FrameBuf::new(buffer, 128, 64);
+    let mut game_framebuffer = FrameBuf::new(buffer, 128, 64);
 
     messages::big_centered_message("18!\nYou Win!", &mut you_win_framebuffer).unwrap();
     messages::big_centered_message("Fish!", &mut fish_framebuffer).unwrap();
 
     loop {
-        match select(Timer::after_millis(250), display_state_channel.receive()).await {
-            Either::First(_) => {
+        match select3(
+            Timer::after_millis(250),
+            display_state_channel.receive(),
+            display_buffer_channel.receive(),
+        )
+        .await
+        {
+            Either3::First(_) => {
                 if display_state == DisplayState::Blink {
                     let mut display = display.lock().await;
                     if toggle_state == ToggleState::Fish {
@@ -216,12 +235,19 @@ async fn display_toggler_task(
                         display.draw_iter(fish_framebuffer.into_iter()).unwrap();
                         toggle_state = ToggleState::Fish;
                     }
+                    if toggle_state == ToggleState::Result {
+                        display.draw_iter(game_framebuffer.into_iter()).unwrap();
+                        toggle_state = ToggleState::Fish;
+                    }
                     display.draw_iter(you_win_framebuffer.into_iter()).unwrap();
                     display.flush().await.unwrap();
                 }
             }
-            Either::Second(state) => {
+            Either3::Second(state) => {
                 display_state = state;
+            }
+            Either3::Third(buffer) => {
+                game_framebuffer = FrameBuf::new(buffer, 128, 64);
             }
         }
     }
