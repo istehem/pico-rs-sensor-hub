@@ -71,7 +71,7 @@ enum DisplayState {
 type DisplayStateChannel = Channel<NoopRawMutex, DisplayState, 4>;
 static DISPLAY_STATE_CHANNEL: StaticCell<DisplayStateChannel> = StaticCell::new();
 
-type DisplayBuffer = [BinaryColor; 8192];
+type DisplayBuffer = FrameBuf<BinaryColor, [BinaryColor; 8192]>;
 type DisplayBufferChannel = Channel<NoopRawMutex, DisplayBuffer, 1>;
 static DISPLAY_BUFFER_CHANNEL: StaticCell<DisplayBufferChannel> = StaticCell::new();
 
@@ -247,7 +247,7 @@ async fn display_toggler_task(
                 display_state = state;
             }
             Either3::Third(buffer) => {
-                game_framebuffer = FrameBuf::new(buffer, 128, 64);
+                game_framebuffer = buffer;
             }
         }
     }
