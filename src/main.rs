@@ -5,6 +5,7 @@ extern crate alloc;
 
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
+use core::ops::DerefMut;
 use defmt::info;
 use display_interface::DisplayError;
 use embassy_executor::Spawner;
@@ -115,6 +116,9 @@ async fn main(spawner: Spawner) {
     spawner
         .spawn(display_state_handler_task(display, display_state_channel))
         .unwrap();
+    spawner
+        .spawn(display_toggler_task(display, display_state_channel))
+        .unwrap();
 }
 
 #[embassy_executor::task]
@@ -161,17 +165,13 @@ async fn play_and_draw_task(
     let seed = roll_channel.receive().await;
     let mut game = Game::new(SmallRng::seed_from_u64(seed));
 
-    let buffer = [BinaryColor::Off; 8192];
-    let mut framebuffer = FrameBuf::new(buffer, 128, 64);
-
     loop {
         if game.dice_left == NumberOfDice::Five {
             display_state_channel.send(DisplayState::Solid).await;
         }
         let game_over = {
             let mut display = display.lock().await;
-            let game_over = play_and_draw(&mut framebuffer, &mut game).unwrap();
-            display.draw_iter(framebuffer.into_iter()).unwrap();
+            let game_over = play_and_draw(display.deref_mut(), &mut game).unwrap();
             display.flush().await.unwrap();
             game_over
         };
@@ -179,6 +179,51 @@ async fn play_and_draw_task(
             display_state_channel.send(DisplayState::Blink).await;
         }
         roll_channel.receive().await;
+    }
+}
+
+#[derive(PartialEq)]
+enum ToggleState {
+    YouWin,
+    Fish,
+}
+
+#[embassy_executor::task]
+async fn display_toggler_task(
+    display: &'static DisplayMutex,
+    display_state_channel: &'static DisplayStateChannel,
+) {
+    let mut toggle_state = ToggleState::YouWin;
+    let mut display_state = DisplayState::Solid;
+
+    let buffer = [BinaryColor::Off; 8192];
+    let mut you_win_framebuffer = FrameBuf::new(buffer, 128, 64);
+    let mut fish_framebuffer = FrameBuf::new(buffer, 128, 64);
+
+    messages::big_centered_message("18!\nYou Win!", &mut you_win_framebuffer).unwrap();
+    messages::big_centered_message("Fish!", &mut fish_framebuffer).unwrap();
+
+    loop {
+        match select(Timer::after_millis(250), display_state_channel.receive()).await {
+            Either::First(_) => {
+                if display_state == DisplayState::Blink {
+                    let mut display = display.lock().await;
+                    if toggle_state == ToggleState::Fish {
+                        display.draw_iter(you_win_framebuffer.into_iter()).unwrap();
+                        toggle_state = ToggleState::YouWin;
+                    }
+                    if toggle_state == ToggleState::YouWin {
+                        display.draw_iter(fish_framebuffer.into_iter()).unwrap();
+                        toggle_state = ToggleState::Fish;
+                    }
+                    display.draw_iter(you_win_framebuffer.into_iter()).unwrap();
+                    display.flush().await.unwrap();
+                }
+            }
+            Either::Second(state) => {
+                display_state = state;
+            }
+        }
     }
 }
 
