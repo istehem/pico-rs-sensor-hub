@@ -76,6 +76,25 @@ type DisplayFrame = [BinaryColor; 8192];
 type DisplayFrameChannel = Channel<NoopRawMutex, DisplayFrame, 1>;
 static DISPLAY_BUFFER_CHANNEL: StaticCell<DisplayFrameChannel> = StaticCell::new();
 
+#[derive(PartialEq)]
+enum GameState {
+    Playing,
+    Won(DisplayFrame),
+    Fish(DisplayFrame),
+    GameOver(DisplayFrame),
+}
+
+#[derive(PartialEq)]
+enum GameResult {
+    Won,
+    Fish,
+    GameOver,
+    Playing,
+}
+
+type GameStateChannel = Channel<NoopRawMutex, GameState, 4>;
+static GAME_STATE_CHANNEL: StaticCell<GameStateChannel> = StaticCell::new();
+
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
     {
@@ -112,12 +131,14 @@ async fn main(spawner: Spawner) {
     let display_state_channel = DISPLAY_STATE_CHANNEL.init(PubSubChannel::new());
 
     let display_buffer_channel = DISPLAY_BUFFER_CHANNEL.init(Channel::new());
+    let game_state_channel = GAME_STATE_CHANNEL.init(Channel::new());
     spawner
         .spawn(play_and_draw_task(
             display,
             roll_channel,
             display_state_channel,
             display_buffer_channel,
+            game_state_channel,
         ))
         .unwrap();
     spawner
@@ -129,6 +150,7 @@ async fn main(spawner: Spawner) {
             display,
             display_state_channel,
             display_buffer_channel,
+            game_state_channel,
         ))
         .unwrap();
 }
@@ -174,6 +196,7 @@ async fn play_and_draw_task(
     roll_channel: &'static RollChannel,
     display_state_channel: &'static DisplayStateChannel,
     display_buffer_channel: &'static DisplayFrameChannel,
+    game_state_channel: &'static GameStateChannel,
 ) {
     let seed = roll_channel.receive().await;
     let mut game = Game::new(SmallRng::seed_from_u64(seed));
@@ -185,21 +208,35 @@ async fn play_and_draw_task(
         if game.dice_left == NumberOfDice::Five {
             display_state_publisher.publish(DisplayState::Solid).await;
         }
-        let game_over = {
+        let game_result = {
             let mut framebuffer = FrameBuf::new(&mut buffer, 128, 64);
-            let game_over = play_and_draw(&mut framebuffer, &mut game).unwrap();
+            let game_result = play_and_draw(&mut framebuffer, &mut game).unwrap();
 
             let mut display = display.lock().await;
             display.draw_iter(framebuffer.into_iter()).unwrap();
             display.flush().await.unwrap();
-            game_over
+            game_result
         };
         if matches!(
-            game_over,
+            game_result,
             GameResult::GameOver | GameResult::Won | GameResult::Fish
         ) {
+            match game_result {
+                GameResult::GameOver => {
+                    game_state_channel.send(GameState::GameOver(buffer)).await;
+                }
+                GameResult::Won => {
+                    game_state_channel.send(GameState::Won(buffer)).await;
+                }
+                GameResult::Fish => {
+                    game_state_channel.send(GameState::Fish(buffer)).await;
+                }
+                _ => (),
+            }
             display_state_publisher.publish(DisplayState::Blink).await;
             display_buffer_channel.send(buffer).await;
+        } else {
+            game_state_channel.send(GameState::Playing).await;
         }
         roll_channel.receive().await;
     }
@@ -217,6 +254,7 @@ async fn display_toggler_task(
     display: &'static DisplayMutex,
     display_state_channel: &'static DisplayStateChannel,
     display_frame_channel: &'static DisplayFrameChannel,
+    _game_state_channel: &'static GameStateChannel,
 ) {
     let mut toggle_state = ToggleState::YouWin;
     let mut display_state = DisplayState::Solid;
@@ -263,24 +301,6 @@ async fn display_toggler_task(
             }
         }
     }
-}
-
-/*
-#[derive(PartialEq)]
-enum GameState {
-    Playing,
-    Won(DisplayFrame),
-    Fish(DisplayFrame),
-    GameOver(DisplayFrame),
-}
-*/
-
-#[derive(PartialEq)]
-enum GameResult {
-    Won,
-    Fish,
-    GameOver,
-    Playing,
 }
 
 #[embassy_executor::task]
