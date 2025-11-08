@@ -72,9 +72,9 @@ enum DisplayState {
 type DisplayStateChannel = PubSubChannel<NoopRawMutex, DisplayState, 4, 2, 1>;
 static DISPLAY_STATE_CHANNEL: StaticCell<DisplayStateChannel> = StaticCell::new();
 
-type DisplayBuffer = [BinaryColor; 8192];
-type DisplayBufferChannel = Channel<NoopRawMutex, DisplayBuffer, 1>;
-static DISPLAY_BUFFER_CHANNEL: StaticCell<DisplayBufferChannel> = StaticCell::new();
+type DisplayFrame = [BinaryColor; 8192];
+type DisplayFrameChannel = Channel<NoopRawMutex, DisplayFrame, 1>;
+static DISPLAY_BUFFER_CHANNEL: StaticCell<DisplayFrameChannel> = StaticCell::new();
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
@@ -173,7 +173,7 @@ async fn play_and_draw_task(
     display: &'static DisplayMutex,
     roll_channel: &'static RollChannel,
     display_state_channel: &'static DisplayStateChannel,
-    display_buffer_channel: &'static DisplayBufferChannel,
+    display_buffer_channel: &'static DisplayFrameChannel,
 ) {
     let seed = roll_channel.receive().await;
     let mut game = Game::new(SmallRng::seed_from_u64(seed));
@@ -194,7 +194,10 @@ async fn play_and_draw_task(
             display.flush().await.unwrap();
             game_over
         };
-        if game_over {
+        if matches!(
+            game_over,
+            GameResult::GameOver | GameResult::Won | GameResult::Fish
+        ) {
             display_state_publisher.publish(DisplayState::Blink).await;
             display_buffer_channel.send(buffer).await;
         }
@@ -213,7 +216,7 @@ enum ToggleState {
 async fn display_toggler_task(
     display: &'static DisplayMutex,
     display_state_channel: &'static DisplayStateChannel,
-    display_buffer_channel: &'static DisplayBufferChannel,
+    display_frame_channel: &'static DisplayFrameChannel,
 ) {
     let mut toggle_state = ToggleState::YouWin;
     let mut display_state = DisplayState::Solid;
@@ -232,7 +235,7 @@ async fn display_toggler_task(
         match select3(
             Timer::after_millis(2000),
             display_state_subscriber.next_message_pure(),
-            display_buffer_channel.receive(),
+            display_frame_channel.receive(),
         )
         .await
         {
@@ -260,6 +263,24 @@ async fn display_toggler_task(
             }
         }
     }
+}
+
+/*
+#[derive(PartialEq)]
+enum GameState {
+    Playing,
+    Won(DisplayFrame),
+    Fish(DisplayFrame),
+    GameOver(DisplayFrame),
+}
+*/
+
+#[derive(PartialEq)]
+enum GameResult {
+    Won,
+    Fish,
+    GameOver,
+    Playing,
 }
 
 #[embassy_executor::task]
@@ -297,7 +318,7 @@ async fn set_invert_display(display: &DisplayMutex, invert: bool) -> Result<(), 
     display.lock().await.set_invert(invert).await
 }
 
-fn play_and_draw<T>(display: &mut T, game: &mut Game) -> Result<bool, DrawError<T::Error>>
+fn play_and_draw<T>(display: &mut T, game: &mut Game) -> Result<GameResult, DrawError<T::Error>>
 where
     T: DisplayTrait,
 {
@@ -306,7 +327,7 @@ where
         game.roll();
         game.rolled.draw(display)?;
         info!("current score: {}", game.score());
-        Ok(false)
+        Ok(GameResult::Playing)
     } else {
         let mut picked: Vec<String> = game
             .picked
@@ -322,10 +343,14 @@ where
             messages::big_centered_message("Fish!", display)?;
         } else if game.has_won() {
             messages::big_centered_message("18!\nYou Win!", display)?;
+            game.reset();
+            return Ok(GameResult::Won);
         } else {
             game.picked.draw(display)?;
+            game.reset();
+            return Ok(GameResult::Fish);
         }
         game.reset();
-        Ok(true)
+        Ok(GameResult::GameOver)
     }
 }
