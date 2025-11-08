@@ -177,9 +177,8 @@ async fn play_and_draw_task(
 ) {
     let seed = roll_channel.receive().await;
     let mut game = Game::new(SmallRng::seed_from_u64(seed));
-    let buffer = [BinaryColor::Off; 8192];
+    let mut buffer = [BinaryColor::Off; 8192];
 
-    let mut framebuffer = FrameBuf::new(buffer, 128, 64);
     let display_state_publisher = display_state_channel.publisher().unwrap();
 
     loop {
@@ -187,8 +186,10 @@ async fn play_and_draw_task(
             display_state_publisher.publish(DisplayState::Solid).await;
         }
         let game_over = {
-            let mut display = display.lock().await;
+            let mut framebuffer = FrameBuf::new(&mut buffer, 128, 64);
             let game_over = play_and_draw(&mut framebuffer, &mut game).unwrap();
+
+            let mut display = display.lock().await;
             display.draw_iter(framebuffer.into_iter()).unwrap();
             display.flush().await.unwrap();
             game_over
@@ -206,16 +207,6 @@ enum ToggleState {
     YouWin,
     Fish,
     Result,
-}
-
-impl ToggleState {
-    fn as_str(&self) -> &str {
-        match &self {
-            ToggleState::YouWin => "You Win!",
-            ToggleState::Fish => "Fish!",
-            ToggleState::Result => "Result",
-        }
-    }
 }
 
 #[embassy_executor::task]
@@ -239,7 +230,7 @@ async fn display_toggler_task(
 
     loop {
         match select3(
-            Timer::after_millis(250),
+            Timer::after_millis(2000),
             display_state_subscriber.next_message_pure(),
             display_buffer_channel.receive(),
         )
@@ -247,8 +238,6 @@ async fn display_toggler_task(
         {
             Either3::First(_) => {
                 if display_state == DisplayState::Blink {
-                    info!("blinking");
-                    info!("blinking with toggle state: {}", toggle_state.as_str());
                     let mut display = display.lock().await;
                     if toggle_state == ToggleState::Fish {
                         display.draw_iter(you_win_framebuffer.into_iter()).unwrap();
@@ -284,7 +273,7 @@ async fn display_state_handler_task(
 
     loop {
         match select(
-            Timer::after_millis(750),
+            Timer::after_millis(1000),
             display_state_subscriber.next_message_pure(),
         )
         .await
