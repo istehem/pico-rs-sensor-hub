@@ -205,6 +205,16 @@ enum ToggleState {
     Result,
 }
 
+impl ToggleState {
+    fn as_str(&self) -> &str {
+        match &self {
+            ToggleState::YouWin => "You Win!",
+            ToggleState::Fish => "Fish!",
+            ToggleState::Result => "Result",
+        }
+    }
+}
+
 #[embassy_executor::task]
 async fn display_toggler_task(
     display: &'static DisplayMutex,
@@ -232,6 +242,8 @@ async fn display_toggler_task(
         {
             Either3::First(_) => {
                 if display_state == DisplayState::Blink {
+                    info!("blinking");
+                    info!("blinking with toggle state: {}", toggle_state.as_str());
                     let mut display = display.lock().await;
                     if toggle_state == ToggleState::Fish {
                         display.draw_iter(you_win_framebuffer.into_iter()).unwrap();
@@ -243,7 +255,6 @@ async fn display_toggler_task(
                         display.draw_iter(game_framebuffer.into_iter()).unwrap();
                         toggle_state = ToggleState::Fish;
                     }
-                    display.draw_iter(you_win_framebuffer.into_iter()).unwrap();
                     display.flush().await.unwrap();
                 }
             }
