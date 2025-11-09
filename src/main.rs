@@ -138,7 +138,6 @@ async fn main(spawner: Spawner) {
     spawner
         .spawn(display_state_handler_task(display, display_state_channel))
         .unwrap();
-
     spawner
         .spawn(display_animations_task(
             display,
