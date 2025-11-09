@@ -16,15 +16,6 @@ pub enum GameResult {
     Playing,
 }
 
-impl GameResult {
-    pub fn is_final_result(&self) -> bool {
-        matches!(
-            self,
-            GameResult::GameOver(_) | GameResult::Won | GameResult::Fish
-        )
-    }
-}
-
 pub fn play_and_draw<T>(display: &mut T, game: &mut Game) -> Result<GameResult, DrawError<T::Error>>
 where
     T: DisplayTrait,

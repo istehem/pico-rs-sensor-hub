@@ -203,23 +203,21 @@ async fn play_and_draw_task(
             display.flush().await.unwrap();
             game_result
         };
-        if game_result.is_final_result() {
-            match game_result {
-                GameResult::GameOver(score) => {
-                    game_state_channel
-                        .send(GameState::GameOver(buffer, score))
-                        .await;
-                }
-                GameResult::Won => {
-                    game_state_channel.send(GameState::Won(buffer)).await;
-                }
-                GameResult::Fish => {
-                    game_state_channel.send(GameState::Fish(buffer)).await;
-                }
-                _ => (),
+        match game_result {
+            GameResult::GameOver(score) => {
+                game_state_channel
+                    .send(GameState::GameOver(buffer, score))
+                    .await;
             }
-        } else {
-            game_state_channel.send(GameState::Playing).await;
+            GameResult::Won => {
+                game_state_channel.send(GameState::Won(buffer)).await;
+            }
+            GameResult::Fish => {
+                game_state_channel.send(GameState::Fish(buffer)).await;
+            }
+            GameResult::Playing => {
+                game_state_channel.send(GameState::Playing).await;
+            }
         }
         roll_channel.receive().await;
     }
@@ -260,7 +258,8 @@ async fn display_animations_task(
                             &you_won_frame,
                             &fish_frame,
                             &score_frame,
-                        );
+                        )
+                        .unwrap();
                     } else {
                         display.draw_iter(&dice_frame).unwrap();
                     }
@@ -301,18 +300,12 @@ fn draw_message(
     you_won_frame: &FrameBuf<BinaryColor, DisplayFrame>,
     fish_frame: &FrameBuf<BinaryColor, DisplayFrame>,
     score_frame: &FrameBuf<BinaryColor, DisplayFrame>,
-) {
+) -> Result<(), DisplayError> {
     match game_state {
-        GameState::Won(_) => {
-            display.draw_iter(you_won_frame).unwrap();
-        }
-        GameState::Fish(_) => {
-            display.draw_iter(fish_frame).unwrap();
-        }
-        GameState::GameOver(_, _score) => {
-            display.draw_iter(score_frame).unwrap();
-        }
-        _ => (),
+        GameState::Won(_) => display.draw_iter(you_won_frame),
+        GameState::Fish(_) => display.draw_iter(fish_frame),
+        GameState::GameOver(_, _) => display.draw_iter(score_frame),
+        _ => Ok(()),
     }
 }
 
