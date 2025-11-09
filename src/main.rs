@@ -241,8 +241,8 @@ async fn display_animations_task(
     let buffer = [BinaryColor::Off; 8192];
     let mut you_won_frame = new_frame_buffer(buffer);
     let mut fish_frame = new_frame_buffer(buffer);
-    let mut game_score_frame = new_frame_buffer(buffer);
-    let mut game_frame = new_frame_buffer(buffer);
+    let mut score_frame = new_frame_buffer(buffer);
+    let mut dice_frame = new_frame_buffer(buffer);
 
     messages::big_centered_message("18!\nYou Win!", &mut you_won_frame).unwrap();
     messages::big_centered_message("Fish!", &mut fish_frame).unwrap();
@@ -259,10 +259,10 @@ async fn display_animations_task(
                             &game_state,
                             &you_won_frame,
                             &fish_frame,
-                            &game_score_frame,
+                            &score_frame,
                         );
                     } else {
-                        display.draw_iter(&game_frame).unwrap();
+                        display.draw_iter(&dice_frame).unwrap();
                     }
                     display.flush().await.unwrap();
                     show_message = !show_message;
@@ -271,19 +271,19 @@ async fn display_animations_task(
             Either::Second(state @ GameState::Won(frame)) => {
                 display_state_channel.send(DisplayState::Blink).await;
                 game_state = state;
-                game_frame = new_frame_buffer(frame);
+                dice_frame = new_frame_buffer(frame);
             }
             Either::Second(state @ GameState::Fish(frame)) => {
                 display_state_channel.send(DisplayState::Blink).await;
                 game_state = state;
-                game_frame = new_frame_buffer(frame);
+                dice_frame = new_frame_buffer(frame);
             }
             Either::Second(state @ GameState::GameOver(frame, score)) => {
                 display_state_channel.send(DisplayState::Blink).await;
                 game_state = state;
-                game_frame = new_frame_buffer(frame);
-                game_score_frame.clear(BinaryColor::Off).unwrap();
-                messages::big_centered_message(score.to_string().as_str(), &mut game_score_frame)
+                dice_frame = new_frame_buffer(frame);
+                score_frame.clear(BinaryColor::Off).unwrap();
+                messages::big_centered_message(score.to_string().as_str(), &mut score_frame)
                     .unwrap();
             }
             Either::Second(state) => {
@@ -300,7 +300,7 @@ fn draw_message(
     game_state: &GameState,
     you_won_frame: &FrameBuf<BinaryColor, DisplayFrame>,
     fish_frame: &FrameBuf<BinaryColor, DisplayFrame>,
-    game_score_frame: &FrameBuf<BinaryColor, DisplayFrame>,
+    score_frame: &FrameBuf<BinaryColor, DisplayFrame>,
 ) {
     match game_state {
         GameState::Won(_) => {
@@ -310,7 +310,7 @@ fn draw_message(
             display.draw_iter(fish_frame).unwrap();
         }
         GameState::GameOver(_, _score) => {
-            display.draw_iter(game_score_frame).unwrap();
+            display.draw_iter(score_frame).unwrap();
         }
         _ => (),
     }
