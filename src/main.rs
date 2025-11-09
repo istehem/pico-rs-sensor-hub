@@ -255,6 +255,14 @@ async fn display_animations_task(
                     let mut display = display.lock().await;
 
                     if show_message {
+                        draw_message(
+                            &mut display,
+                            &game_state,
+                            &mut you_win_framebuffer,
+                            &mut fish_framebuffer,
+                            &mut game_score_framebuffer,
+                        );
+
                         match game_state {
                             GameState::GameOver(_, _score) => {
                                 display
@@ -303,6 +311,29 @@ async fn display_animations_task(
                 show_message = true;
             }
         }
+    }
+}
+
+fn draw_message(
+    display: &mut Display,
+    game_state: &GameState,
+    you_win_framebuffer: &mut FrameBuf<BinaryColor, DisplayFrame>,
+    fish_framebuffer: &mut FrameBuf<BinaryColor, DisplayFrame>,
+    game_score_framebuffer: &mut FrameBuf<BinaryColor, DisplayFrame>,
+) {
+    match game_state {
+        GameState::Won(_) => {
+            display.draw_iter(you_win_framebuffer.into_iter()).unwrap();
+        }
+        GameState::Fish(_) => {
+            display.draw_iter(fish_framebuffer.into_iter()).unwrap();
+        }
+        GameState::GameOver(_, _score) => {
+            display
+                .draw_iter(game_score_framebuffer.into_iter())
+                .unwrap();
+        }
+        _ => (),
     }
 }
 
