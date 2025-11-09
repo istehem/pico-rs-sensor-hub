@@ -71,8 +71,6 @@ type DisplayStateChannel = Channel<NoopRawMutex, DisplayState, 4>;
 static DISPLAY_STATE_CHANNEL: StaticCell<DisplayStateChannel> = StaticCell::new();
 
 type DisplayFrame = [BinaryColor; 8192];
-type DisplayFrameChannel = Channel<NoopRawMutex, DisplayFrame, 1>;
-static DISPLAY_BUFFER_CHANNEL: StaticCell<DisplayFrameChannel> = StaticCell::new();
 
 #[derive(PartialEq)]
 enum GameState {
@@ -128,14 +126,12 @@ async fn main(spawner: Spawner) {
     let display = DISPLAY.init(Mutex::new(display));
     let display_state_channel = DISPLAY_STATE_CHANNEL.init(Channel::new());
 
-    let display_buffer_channel = DISPLAY_BUFFER_CHANNEL.init(Channel::new());
     let game_state_channel = GAME_STATE_CHANNEL.init(Channel::new());
     spawner
         .spawn(play_and_draw_task(
             display,
             roll_channel,
             display_state_channel,
-            display_buffer_channel,
             game_state_channel,
         ))
         .unwrap();
@@ -188,13 +184,13 @@ async fn play_and_draw_task(
     display: &'static DisplayMutex,
     roll_channel: &'static RollChannel,
     display_state_channel: &'static DisplayStateChannel,
-    display_buffer_channel: &'static DisplayFrameChannel,
     game_state_channel: &'static GameStateChannel,
 ) {
     let seed = roll_channel.receive().await;
     let mut game = Game::new(SmallRng::seed_from_u64(seed));
     let mut buffer = [BinaryColor::Off; 8192];
 
+    info!("Game starts!");
     loop {
         if game.dice_left == NumberOfDice::Five {
             display_state_channel.send(DisplayState::Solid).await;
@@ -227,7 +223,6 @@ async fn play_and_draw_task(
                 _ => (),
             }
             display_state_channel.send(DisplayState::Blink).await;
-            display_buffer_channel.send(buffer).await;
         } else {
             game_state_channel.send(GameState::Playing).await;
         }
@@ -245,7 +240,7 @@ async fn display_animations_task(
     game_state_channel: &'static GameStateChannel,
 ) {
     let mut game_state = GameState::Playing;
-    let mut show_message = false;
+    let mut show_message = true;
 
     let buffer = [BinaryColor::Off; 8192];
     let mut you_win_framebuffer = new_frame_buffer(buffer);
@@ -298,6 +293,7 @@ async fn display_animations_task(
             Either::Second(state @ GameState::GameOver(frame, score)) => {
                 game_state = state;
                 game_framebuffer = new_frame_buffer(frame);
+                game_score_framebuffer.clear(BinaryColor::Off).unwrap();
                 messages::big_centered_message(
                     score.to_string().as_str(),
                     &mut game_score_framebuffer,
@@ -306,7 +302,7 @@ async fn display_animations_task(
             }
             Either::Second(state) => {
                 game_state = state;
-                show_message = false;
+                show_message = true;
             }
         }
     }
@@ -362,18 +358,16 @@ where
         info!("picked: {}", picked.join(",").as_str());
         let score = game.score();
         info!("final score: {}", score);
+        game.picked.draw(display)?;
         if game.has_fish() {
-            messages::big_centered_message("Fish!", display)?;
+            game.reset();
+            Ok(GameResult::Fish)
         } else if game.has_won() {
-            messages::big_centered_message("18!\nYou Win!", display)?;
             game.reset();
-            return Ok(GameResult::Won);
+            Ok(GameResult::Won)
         } else {
-            game.picked.draw(display)?;
             game.reset();
-            return Ok(GameResult::Fish);
+            Ok(GameResult::GameOver(score))
         }
-        game.reset();
-        Ok(GameResult::GameOver(score))
     }
 }
