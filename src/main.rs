@@ -3,8 +3,7 @@
 
 extern crate alloc;
 
-use alloc::string::{String, ToString};
-use alloc::vec::Vec;
+use alloc::string::ToString;
 use defmt::info;
 use display_interface::DisplayError;
 use embassy_executor::Spawner;
@@ -33,12 +32,13 @@ use {defmt_rtt as _, panic_probe as _};
 
 use embedded_graphics_framebuf::FrameBuf;
 
-use game_logic::two_four_eighteen::{Game, NumberOfDice};
-use pico_display::aliases::Display as DisplayTrait;
+use game_logic::two_four_eighteen::Game;
 use pico_display::messages;
 
 mod error;
 use crate::error::DrawError;
+mod player;
+use crate::player::GameResult;
 
 #[global_allocator]
 static HEAP: LlffHeap = LlffHeap::empty();
@@ -89,23 +89,6 @@ impl GameState {
     }
 }
 
-#[derive(PartialEq)]
-enum GameResult {
-    Won,
-    Fish,
-    GameOver(i8),
-    Playing,
-}
-
-impl GameResult {
-    fn is_final_result(&self) -> bool {
-        matches!(
-            self,
-            GameResult::GameOver(_) | GameResult::Won | GameResult::Fish
-        )
-    }
-}
-
 type GameStateChannel = Channel<NoopRawMutex, GameState, 4>;
 static GAME_STATE_CHANNEL: StaticCell<GameStateChannel> = StaticCell::new();
 
@@ -149,7 +132,6 @@ async fn main(spawner: Spawner) {
         .spawn(play_and_draw_task(
             display,
             roll_channel,
-            display_state_channel,
             game_state_channel,
         ))
         .unwrap();
@@ -158,7 +140,11 @@ async fn main(spawner: Spawner) {
         .unwrap();
 
     spawner
-        .spawn(display_animations_task(display, game_state_channel))
+        .spawn(display_animations_task(
+            display,
+            game_state_channel,
+            display_state_channel,
+        ))
         .unwrap();
 }
 
@@ -201,7 +187,6 @@ async fn break_beam_roller_task(
 async fn play_and_draw_task(
     display: &'static DisplayMutex,
     roll_channel: &'static RollChannel,
-    display_state_channel: &'static DisplayStateChannel,
     game_state_channel: &'static GameStateChannel,
 ) {
     let seed = roll_channel.receive().await;
@@ -210,12 +195,9 @@ async fn play_and_draw_task(
 
     info!("Game starts!");
     loop {
-        if game.dice_left == NumberOfDice::Five {
-            display_state_channel.send(DisplayState::Solid).await;
-        }
         let game_result = {
             let mut framebuffer = FrameBuf::new(&mut buffer, 128, 64);
-            let game_result = play_and_draw(&mut framebuffer, &mut game).unwrap();
+            let game_result = player::play_and_draw(&mut framebuffer, &mut game).unwrap();
 
             let mut display = display.lock().await;
             display.draw_iter(framebuffer.into_iter()).unwrap();
@@ -237,7 +219,6 @@ async fn play_and_draw_task(
                 }
                 _ => (),
             }
-            display_state_channel.send(DisplayState::Blink).await;
         } else {
             game_state_channel.send(GameState::Playing).await;
         }
@@ -253,6 +234,7 @@ fn new_frame_buffer(frame: DisplayFrame) -> FrameBuf<BinaryColor, DisplayFrame> 
 async fn display_animations_task(
     display: &'static DisplayMutex,
     game_state_channel: &'static GameStateChannel,
+    display_state_channel: &'static DisplayStateChannel,
 ) {
     let mut game_state = GameState::Playing;
     let mut show_message = true;
@@ -295,14 +277,17 @@ async fn display_animations_task(
                 }
             }
             Either::Second(state @ GameState::Won(frame)) => {
+                display_state_channel.send(DisplayState::Blink).await;
                 game_state = state;
                 game_framebuffer = new_frame_buffer(frame);
             }
             Either::Second(state @ GameState::Fish(frame)) => {
+                display_state_channel.send(DisplayState::Blink).await;
                 game_state = state;
                 game_framebuffer = new_frame_buffer(frame);
             }
             Either::Second(state @ GameState::GameOver(frame, score)) => {
+                display_state_channel.send(DisplayState::Blink).await;
                 game_state = state;
                 game_framebuffer = new_frame_buffer(frame);
                 game_score_framebuffer.clear(BinaryColor::Off).unwrap();
@@ -313,6 +298,7 @@ async fn display_animations_task(
                 .unwrap();
             }
             Either::Second(state) => {
+                display_state_channel.send(DisplayState::Solid).await;
                 game_state = state;
                 show_message = true;
             }
@@ -347,39 +333,4 @@ async fn display_state_handler_task(
 
 async fn set_invert_display(display: &DisplayMutex, invert: bool) -> Result<(), DisplayError> {
     display.lock().await.set_invert(invert).await
-}
-
-fn play_and_draw<T>(display: &mut T, game: &mut Game) -> Result<GameResult, DrawError<T::Error>>
-where
-    T: DisplayTrait,
-{
-    display.clear(BinaryColor::Off)?;
-    if game.dice_left > NumberOfDice::Zero {
-        game.roll();
-        game.rolled.draw(display)?;
-        info!("current score: {}", game.score());
-        Ok(GameResult::Playing)
-    } else {
-        let mut picked: Vec<String> = game
-            .picked
-            .dice
-            .iter()
-            .map(|die| die.value.as_u8().to_string())
-            .collect();
-        picked.sort();
-        info!("picked: {}", picked.join(",").as_str());
-        let score = game.score();
-        info!("final score: {}", score);
-        game.picked.draw(display)?;
-        if game.has_fish() {
-            game.reset();
-            Ok(GameResult::Fish)
-        } else if game.has_won() {
-            game.reset();
-            Ok(GameResult::Won)
-        } else {
-            game.reset();
-            Ok(GameResult::GameOver(score))
-        }
-    }
 }
