@@ -15,9 +15,7 @@ use embassy_rp::{
     i2c::{self, Config as I2cConfig, I2c},
     peripherals::I2C1,
 };
-use embassy_sync::{
-    blocking_mutex::raw::NoopRawMutex, channel::Channel, mutex::Mutex, pubsub::PubSubChannel,
-};
+use embassy_sync::{blocking_mutex::raw::NoopRawMutex, channel::Channel, mutex::Mutex};
 use embassy_time::{Instant, Timer};
 use embedded_alloc::LlffHeap;
 use embedded_graphics::{draw_target::DrawTarget, pixelcolor::BinaryColor};
@@ -69,7 +67,7 @@ enum DisplayState {
     Solid,
 }
 
-type DisplayStateChannel = PubSubChannel<NoopRawMutex, DisplayState, 4, 2, 1>;
+type DisplayStateChannel = Channel<NoopRawMutex, DisplayState, 4>;
 static DISPLAY_STATE_CHANNEL: StaticCell<DisplayStateChannel> = StaticCell::new();
 
 type DisplayFrame = [BinaryColor; 8192];
@@ -128,7 +126,7 @@ async fn main(spawner: Spawner) {
     display.flush().await.unwrap();
 
     let display = DISPLAY.init(Mutex::new(display));
-    let display_state_channel = DISPLAY_STATE_CHANNEL.init(PubSubChannel::new());
+    let display_state_channel = DISPLAY_STATE_CHANNEL.init(Channel::new());
 
     let display_buffer_channel = DISPLAY_BUFFER_CHANNEL.init(Channel::new());
     let game_state_channel = GAME_STATE_CHANNEL.init(Channel::new());
@@ -197,11 +195,9 @@ async fn play_and_draw_task(
     let mut game = Game::new(SmallRng::seed_from_u64(seed));
     let mut buffer = [BinaryColor::Off; 8192];
 
-    let display_state_publisher = display_state_channel.publisher().unwrap();
-
     loop {
         if game.dice_left == NumberOfDice::Five {
-            display_state_publisher.publish(DisplayState::Solid).await;
+            display_state_channel.send(DisplayState::Solid).await;
         }
         let game_result = {
             let mut framebuffer = FrameBuf::new(&mut buffer, 128, 64);
@@ -230,7 +226,7 @@ async fn play_and_draw_task(
                 }
                 _ => (),
             }
-            display_state_publisher.publish(DisplayState::Blink).await;
+            display_state_channel.send(DisplayState::Blink).await;
             display_buffer_channel.send(buffer).await;
         } else {
             game_state_channel.send(GameState::Playing).await;
@@ -310,6 +306,7 @@ async fn display_animations_task(
             }
             Either::Second(state) => {
                 game_state = state;
+                show_message = false;
             }
         }
     }
@@ -322,15 +319,9 @@ async fn display_state_handler_task(
 ) {
     let mut invert_display = false;
     let mut display_state = DisplayState::Solid;
-    let mut display_state_subscriber = display_state_channel.subscriber().unwrap();
 
     loop {
-        match select(
-            Timer::after_millis(1000),
-            display_state_subscriber.next_message_pure(),
-        )
-        .await
-        {
+        match select(Timer::after_millis(1000), display_state_channel.receive()).await {
             Either::First(_) => {
                 if display_state == DisplayState::Blink {
                     invert_display = !invert_display;
