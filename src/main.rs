@@ -80,12 +80,30 @@ enum GameState {
     GameOver(DisplayFrame, i8),
 }
 
+impl GameState {
+    fn is_final_state(&self) -> bool {
+        matches!(
+            self,
+            GameState::GameOver(_, _) | GameState::Won(_) | GameState::Fish(_)
+        )
+    }
+}
+
 #[derive(PartialEq)]
 enum GameResult {
     Won,
     Fish,
     GameOver(i8),
     Playing,
+}
+
+impl GameResult {
+    fn is_final_result(&self) -> bool {
+        matches!(
+            self,
+            GameResult::GameOver(_) | GameResult::Won | GameResult::Fish
+        )
+    }
 }
 
 type GameStateChannel = Channel<NoopRawMutex, GameState, 4>;
@@ -204,10 +222,7 @@ async fn play_and_draw_task(
             display.flush().await.unwrap();
             game_result
         };
-        if matches!(
-            game_result,
-            GameResult::GameOver(_) | GameResult::Won | GameResult::Fish
-        ) {
+        if game_result.is_final_result() {
             match game_result {
                 GameResult::GameOver(score) => {
                     game_state_channel
@@ -254,10 +269,7 @@ async fn display_animations_task(
     loop {
         match select(Timer::after_millis(2000), game_state_channel.receive()).await {
             Either::First(_) => {
-                if matches!(
-                    game_state,
-                    GameState::GameOver(_, _) | GameState::Won(_) | GameState::Fish(_)
-                ) {
+                if game_state.is_final_state() {
                     let mut display = display.lock().await;
 
                     if show_message {
