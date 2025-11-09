@@ -43,23 +43,19 @@ use crate::player::GameResult;
 #[global_allocator]
 static HEAP: LlffHeap = LlffHeap::empty();
 
+const I2C_FREQUENCY: u32 = 400_000;
+const ONE_SECOND_IN_MUS: u64 = 1000000;
+
 type Display = Ssd1306Async<
     I2CInterface<I2c<'static, I2C1, i2c::Async>>,
     DisplaySize128x64,
     BufferedGraphicsModeAsync<DisplaySize128x64>,
 >;
 type DisplayMutex = Mutex<NoopRawMutex, Display>;
-type RollChannel = Channel<NoopRawMutex, u64, 4>;
-
-const I2C_FREQUENCY: u32 = 400_000;
-const ONE_SECOND_IN_MUS: u64 = 1000000;
-
-static ROLL_CHANNEL: StaticCell<RollChannel> = StaticCell::new();
 static DISPLAY: StaticCell<DisplayMutex> = StaticCell::new();
 
-bind_interrupts!(struct Irqs {
-    I2C1_IRQ => i2c::InterruptHandler<I2C1>;
-});
+type RollChannel = Channel<NoopRawMutex, u64, 4>;
+static ROLL_CHANNEL: StaticCell<RollChannel> = StaticCell::new();
 
 #[derive(PartialEq, Clone)]
 enum DisplayState {
@@ -69,6 +65,10 @@ enum DisplayState {
 
 type DisplayStateChannel = Channel<NoopRawMutex, DisplayState, 4>;
 static DISPLAY_STATE_CHANNEL: StaticCell<DisplayStateChannel> = StaticCell::new();
+
+bind_interrupts!(struct Irqs {
+    I2C1_IRQ => i2c::InterruptHandler<I2C1>;
+});
 
 type DisplayFrame = [BinaryColor; 8192];
 
