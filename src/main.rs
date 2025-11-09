@@ -8,7 +8,7 @@ use alloc::vec::Vec;
 use defmt::info;
 use display_interface::DisplayError;
 use embassy_executor::Spawner;
-use embassy_futures::select::{select, select3, Either, Either3};
+use embassy_futures::select::{select, Either};
 use embassy_rp::{
     bind_interrupts,
     gpio::{Input, Level, Output, Pull},
@@ -146,12 +146,7 @@ async fn main(spawner: Spawner) {
         .unwrap();
 
     spawner
-        .spawn(display_toggler_task(
-            display,
-            display_state_channel,
-            display_buffer_channel,
-            game_state_channel,
-        ))
+        .spawn(display_toggler_task(display, game_state_channel))
         .unwrap();
 }
 
@@ -242,62 +237,70 @@ async fn play_and_draw_task(
     }
 }
 
-#[derive(PartialEq)]
-enum ToggleState {
-    YouWin,
-    Fish,
-    Result,
+fn new_frame_buffer(frame: DisplayFrame) -> FrameBuf<BinaryColor, DisplayFrame> {
+    FrameBuf::new(frame, 128, 64)
 }
 
 #[embassy_executor::task]
 async fn display_toggler_task(
     display: &'static DisplayMutex,
-    display_state_channel: &'static DisplayStateChannel,
-    display_frame_channel: &'static DisplayFrameChannel,
-    _game_state_channel: &'static GameStateChannel,
+    game_state_channel: &'static GameStateChannel,
 ) {
-    let mut toggle_state = ToggleState::YouWin;
-    let mut display_state = DisplayState::Solid;
+    let mut game_state = GameState::Playing;
+    let mut show_message = false;
 
     let buffer = [BinaryColor::Off; 8192];
-    let mut you_win_framebuffer = FrameBuf::new(buffer, 128, 64);
-    let mut fish_framebuffer = FrameBuf::new(buffer, 128, 64);
-    let mut game_framebuffer = FrameBuf::new(buffer, 128, 64);
+    let mut you_win_framebuffer = new_frame_buffer(buffer);
+    let mut fish_framebuffer = new_frame_buffer(buffer);
+    let mut game_framebuffer = new_frame_buffer(buffer);
 
     messages::big_centered_message("18!\nYou Win!", &mut you_win_framebuffer).unwrap();
     messages::big_centered_message("Fish!", &mut fish_framebuffer).unwrap();
 
-    let mut display_state_subscriber = display_state_channel.subscriber().unwrap();
-
     loop {
-        match select3(
-            Timer::after_millis(2000),
-            display_state_subscriber.next_message_pure(),
-            display_frame_channel.receive(),
-        )
-        .await
-        {
-            Either3::First(_) => {
-                if display_state == DisplayState::Blink {
+        match select(Timer::after_millis(2000), game_state_channel.receive()).await {
+            Either::First(_) => {
+                if matches!(
+                    game_state,
+                    GameState::GameOver(_) | GameState::Won(_) | GameState::Fish(_)
+                ) {
                     let mut display = display.lock().await;
-                    if toggle_state == ToggleState::Fish {
-                        display.draw_iter(you_win_framebuffer.into_iter()).unwrap();
-                        toggle_state = ToggleState::Result;
-                    } else if toggle_state == ToggleState::YouWin {
-                        display.draw_iter(fish_framebuffer.into_iter()).unwrap();
-                        toggle_state = ToggleState::Result;
-                    } else if toggle_state == ToggleState::Result {
+
+                    if show_message {
+                        match game_state {
+                            GameState::GameOver(_) => {
+                                display.draw_iter(game_framebuffer.into_iter()).unwrap();
+                            }
+                            GameState::Won(_) => {
+                                display.draw_iter(you_win_framebuffer.into_iter()).unwrap();
+                            }
+                            GameState::Fish(_) => {
+                                display.draw_iter(fish_framebuffer.into_iter()).unwrap();
+                            }
+                            _ => (),
+                        }
+                    }
+                    else {
                         display.draw_iter(game_framebuffer.into_iter()).unwrap();
-                        toggle_state = ToggleState::Fish;
                     }
                     display.flush().await.unwrap();
+                    show_message = !show_message;
                 }
             }
-            Either3::Second(state) => {
-                display_state = state;
+            Either::Second(state @ GameState::Won(frame)) => {
+                game_state = state;
+                game_framebuffer = new_frame_buffer(frame);
             }
-            Either3::Third(buffer) => {
-                game_framebuffer = FrameBuf::new(buffer, 128, 64);
+            Either::Second(state @ GameState::Fish(frame)) => {
+                game_state = state;
+                game_framebuffer = new_frame_buffer(frame);
+            }
+            Either::Second(state @ GameState::GameOver(frame)) => {
+                game_state = state;
+                game_framebuffer = new_frame_buffer(frame);
+            }
+            Either::Second(state) => {
+                game_state = state;
             }
         }
     }
