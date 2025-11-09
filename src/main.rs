@@ -81,14 +81,14 @@ enum GameState {
     Playing,
     Won(DisplayFrame),
     Fish(DisplayFrame),
-    GameOver(DisplayFrame),
+    GameOver(DisplayFrame, i8),
 }
 
 #[derive(PartialEq)]
 enum GameResult {
     Won,
     Fish,
-    GameOver,
+    GameOver(i8),
     Playing,
 }
 
@@ -146,7 +146,7 @@ async fn main(spawner: Spawner) {
         .unwrap();
 
     spawner
-        .spawn(display_toggler_task(display, game_state_channel))
+        .spawn(display_animations_task(display, game_state_channel))
         .unwrap();
 }
 
@@ -214,11 +214,13 @@ async fn play_and_draw_task(
         };
         if matches!(
             game_result,
-            GameResult::GameOver | GameResult::Won | GameResult::Fish
+            GameResult::GameOver(_) | GameResult::Won | GameResult::Fish
         ) {
             match game_result {
-                GameResult::GameOver => {
-                    game_state_channel.send(GameState::GameOver(buffer)).await;
+                GameResult::GameOver(score) => {
+                    game_state_channel
+                        .send(GameState::GameOver(buffer, score))
+                        .await;
                 }
                 GameResult::Won => {
                     game_state_channel.send(GameState::Won(buffer)).await;
@@ -242,7 +244,7 @@ fn new_frame_buffer(frame: DisplayFrame) -> FrameBuf<BinaryColor, DisplayFrame> 
 }
 
 #[embassy_executor::task]
-async fn display_toggler_task(
+async fn display_animations_task(
     display: &'static DisplayMutex,
     game_state_channel: &'static GameStateChannel,
 ) {
@@ -253,6 +255,7 @@ async fn display_toggler_task(
     let mut you_win_framebuffer = new_frame_buffer(buffer);
     let mut fish_framebuffer = new_frame_buffer(buffer);
     let mut game_framebuffer = new_frame_buffer(buffer);
+    let mut game_score_framebuffer = new_frame_buffer(buffer);
 
     messages::big_centered_message("18!\nYou Win!", &mut you_win_framebuffer).unwrap();
     messages::big_centered_message("Fish!", &mut fish_framebuffer).unwrap();
@@ -262,14 +265,16 @@ async fn display_toggler_task(
             Either::First(_) => {
                 if matches!(
                     game_state,
-                    GameState::GameOver(_) | GameState::Won(_) | GameState::Fish(_)
+                    GameState::GameOver(_, _) | GameState::Won(_) | GameState::Fish(_)
                 ) {
                     let mut display = display.lock().await;
 
                     if show_message {
                         match game_state {
-                            GameState::GameOver(_) => {
-                                display.draw_iter(game_framebuffer.into_iter()).unwrap();
+                            GameState::GameOver(_, _score) => {
+                                display
+                                    .draw_iter(game_score_framebuffer.into_iter())
+                                    .unwrap();
                             }
                             GameState::Won(_) => {
                                 display.draw_iter(you_win_framebuffer.into_iter()).unwrap();
@@ -279,8 +284,7 @@ async fn display_toggler_task(
                             }
                             _ => (),
                         }
-                    }
-                    else {
+                    } else {
                         display.draw_iter(game_framebuffer.into_iter()).unwrap();
                     }
                     display.flush().await.unwrap();
@@ -295,9 +299,14 @@ async fn display_toggler_task(
                 game_state = state;
                 game_framebuffer = new_frame_buffer(frame);
             }
-            Either::Second(state @ GameState::GameOver(frame)) => {
+            Either::Second(state @ GameState::GameOver(frame, score)) => {
                 game_state = state;
                 game_framebuffer = new_frame_buffer(frame);
+                messages::big_centered_message(
+                    score.to_string().as_str(),
+                    &mut game_score_framebuffer,
+                )
+                .unwrap();
             }
             Either::Second(state) => {
                 game_state = state;
@@ -374,6 +383,6 @@ where
             return Ok(GameResult::Fish);
         }
         game.reset();
-        Ok(GameResult::GameOver)
+        Ok(GameResult::GameOver(score))
     }
 }
