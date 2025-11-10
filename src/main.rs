@@ -267,29 +267,26 @@ async fn display_animations_task(
                     show_message = !show_message;
                 }
             }
-            Either::Second(state @ GameState::Won(frame)) => {
-                display_state_channel.send(DisplayState::Blink).await;
-                game_state = state;
-                dice_frame = new_frame_buffer(frame);
-            }
-            Either::Second(state @ GameState::Fish(frame)) => {
-                display_state_channel.send(DisplayState::Blink).await;
-                game_state = state;
-                dice_frame = new_frame_buffer(frame);
-            }
-            Either::Second(state @ GameState::GameOver(frame, score)) => {
-                display_state_channel.send(DisplayState::Blink).await;
-                game_state = state;
-                dice_frame = new_frame_buffer(frame);
-                score_frame.clear(BinaryColor::Off).unwrap();
-                messages::big_centered_message(score.to_string().as_str(), &mut score_frame)
-                    .unwrap();
-            }
-            Either::Second(state) => {
-                display_state_channel.send(DisplayState::Solid).await;
-                game_state = state;
-                show_message = true;
-            }
+            Either::Second(state) => match state {
+                GameState::Won(frame) | GameState::Fish(frame) => {
+                    display_state_channel.send(DisplayState::Blink).await;
+                    game_state = state;
+                    dice_frame = new_frame_buffer(frame);
+                }
+                GameState::GameOver(frame, score) => {
+                    display_state_channel.send(DisplayState::Blink).await;
+                    game_state = state;
+                    dice_frame = new_frame_buffer(frame);
+                    score_frame.clear(BinaryColor::Off).unwrap();
+                    messages::big_centered_message(score.to_string().as_str(), &mut score_frame)
+                        .unwrap();
+                }
+                state => {
+                    display_state_channel.send(DisplayState::Solid).await;
+                    game_state = state;
+                    show_message = true;
+                }
+            },
         }
     }
 }
