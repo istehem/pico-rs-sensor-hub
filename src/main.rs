@@ -36,7 +36,7 @@ use game_logic::two_four_eighteen::Game;
 use pico_display::messages;
 
 mod error;
-use crate::error::DrawError;
+use crate::error::{DrawError, InfallibleDrawError};
 mod player;
 use crate::player::GameResult;
 
@@ -235,14 +235,27 @@ struct CachedFrames {
 }
 
 impl CachedFrames {
-    fn new() -> Self {
+    fn init() -> Result<Self, InfallibleDrawError> {
         let buffer = [BinaryColor::Off; 8192];
-        Self {
-            you_won_frame: new_frame_buffer(buffer),
-            fish_frame: new_frame_buffer(buffer),
+
+        let mut you_won_frame = new_frame_buffer(buffer);
+        let mut fish_frame = new_frame_buffer(buffer);
+
+        messages::big_centered_message("18!\nYou Win!", &mut you_won_frame)?;
+        messages::big_centered_message("Fish!", &mut fish_frame)?;
+
+        Ok(Self {
+            you_won_frame,
+            fish_frame,
             score_frame: new_frame_buffer(buffer),
             picked_dice_frame: new_frame_buffer(buffer),
-        }
+        })
+    }
+
+    fn update_score_frame(&mut self, score: i8) -> Result<(), InfallibleDrawError> {
+        self.score_frame.clear(BinaryColor::Off)?;
+        messages::big_centered_message(score.to_string().as_str(), &mut self.score_frame)?;
+        Ok(())
     }
 
     fn draw_message(
@@ -272,10 +285,7 @@ async fn display_animations_task(
     let mut game_state = GameState::Playing;
     let mut show_message = true;
 
-    let mut cached_frames = CachedFrames::new();
-
-    messages::big_centered_message("18!\nYou Win!", &mut cached_frames.you_won_frame).unwrap();
-    messages::big_centered_message("Fish!", &mut cached_frames.fish_frame).unwrap();
+    let mut cached_frames = CachedFrames::init().unwrap();
 
     loop {
         match select(Timer::after_millis(2000), game_state_channel.receive()).await {
@@ -304,12 +314,7 @@ async fn display_animations_task(
                     display_state_channel.send(DisplayState::Blink).await;
                     game_state = state;
                     cached_frames.picked_dice_frame = new_frame_buffer(frame);
-                    cached_frames.score_frame.clear(BinaryColor::Off).unwrap();
-                    messages::big_centered_message(
-                        score.to_string().as_str(),
-                        &mut cached_frames.score_frame,
-                    )
-                    .unwrap();
+                    cached_frames.update_score_frame(score).unwrap();
                 }
                 state => {
                     display_state_channel.send(DisplayState::Solid).await;
