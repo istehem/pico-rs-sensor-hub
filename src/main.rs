@@ -227,6 +227,25 @@ fn new_frame_buffer(frame: DisplayFrame) -> FrameBuf<BinaryColor, DisplayFrame> 
     FrameBuf::new(frame, 128, 64)
 }
 
+struct CachedFrames {
+    you_won_frame: FrameBuf<BinaryColor, DisplayFrame>,
+    fish_frame: FrameBuf<BinaryColor, DisplayFrame>,
+    score_frame: FrameBuf<BinaryColor, DisplayFrame>,
+    dice_frame: FrameBuf<BinaryColor, DisplayFrame>,
+}
+
+impl CachedFrames {
+    fn new() -> Self {
+        let buffer = [BinaryColor::Off; 8192];
+        Self {
+            you_won_frame: new_frame_buffer(buffer),
+            fish_frame: new_frame_buffer(buffer),
+            score_frame: new_frame_buffer(buffer),
+            dice_frame: new_frame_buffer(buffer),
+        }
+    }
+}
+
 #[embassy_executor::task]
 async fn display_animations_task(
     display: &'static DisplayMutex,
@@ -236,14 +255,10 @@ async fn display_animations_task(
     let mut game_state = GameState::Playing;
     let mut show_message = true;
 
-    let buffer = [BinaryColor::Off; 8192];
-    let mut you_won_frame = new_frame_buffer(buffer);
-    let mut fish_frame = new_frame_buffer(buffer);
-    let mut score_frame = new_frame_buffer(buffer);
-    let mut dice_frame = new_frame_buffer(buffer);
+    let mut cached_frames = CachedFrames::new();
 
-    messages::big_centered_message("18!\nYou Win!", &mut you_won_frame).unwrap();
-    messages::big_centered_message("Fish!", &mut fish_frame).unwrap();
+    messages::big_centered_message("18!\nYou Win!", &mut cached_frames.you_won_frame).unwrap();
+    messages::big_centered_message("Fish!", &mut cached_frames.fish_frame).unwrap();
 
     loop {
         match select(Timer::after_millis(2000), game_state_channel.receive()).await {
@@ -252,16 +267,9 @@ async fn display_animations_task(
                     let mut display = display.lock().await;
 
                     if show_message {
-                        draw_message(
-                            &mut display,
-                            &game_state,
-                            &you_won_frame,
-                            &fish_frame,
-                            &score_frame,
-                        )
-                        .unwrap();
+                        draw_message(&mut display, &game_state, &cached_frames).unwrap();
                     } else {
-                        display.draw_iter(&dice_frame).unwrap();
+                        display.draw_iter(&cached_frames.dice_frame).unwrap();
                     }
                     display.flush().await.unwrap();
                     show_message = !show_message;
@@ -271,15 +279,18 @@ async fn display_animations_task(
                 GameState::Won(frame) | GameState::Fish(frame) => {
                     display_state_channel.send(DisplayState::Blink).await;
                     game_state = state;
-                    dice_frame = new_frame_buffer(frame);
+                    cached_frames.dice_frame = new_frame_buffer(frame);
                 }
                 GameState::GameOver(frame, score) => {
                     display_state_channel.send(DisplayState::Blink).await;
                     game_state = state;
-                    dice_frame = new_frame_buffer(frame);
-                    score_frame.clear(BinaryColor::Off).unwrap();
-                    messages::big_centered_message(score.to_string().as_str(), &mut score_frame)
-                        .unwrap();
+                    cached_frames.dice_frame = new_frame_buffer(frame);
+                    cached_frames.score_frame.clear(BinaryColor::Off).unwrap();
+                    messages::big_centered_message(
+                        score.to_string().as_str(),
+                        &mut cached_frames.score_frame,
+                    )
+                    .unwrap();
                 }
                 state => {
                     display_state_channel.send(DisplayState::Solid).await;
@@ -294,14 +305,12 @@ async fn display_animations_task(
 fn draw_message(
     display: &mut Display,
     game_state: &GameState,
-    you_won_frame: &FrameBuf<BinaryColor, DisplayFrame>,
-    fish_frame: &FrameBuf<BinaryColor, DisplayFrame>,
-    score_frame: &FrameBuf<BinaryColor, DisplayFrame>,
+    cached_frames: &CachedFrames,
 ) -> Result<(), DisplayError> {
     match game_state {
-        GameState::Won(_) => display.draw_iter(you_won_frame),
-        GameState::Fish(_) => display.draw_iter(fish_frame),
-        GameState::GameOver(_, _) => display.draw_iter(score_frame),
+        GameState::Won(_) => display.draw_iter(&cached_frames.you_won_frame),
+        GameState::Fish(_) => display.draw_iter(&cached_frames.fish_frame),
+        GameState::GameOver(_, _) => display.draw_iter(&cached_frames.score_frame),
         _ => Ok(()),
     }
 }
