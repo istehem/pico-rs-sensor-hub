@@ -231,7 +231,7 @@ struct CachedFrames {
     you_won_frame: FrameBuf<BinaryColor, DisplayFrame>,
     fish_frame: FrameBuf<BinaryColor, DisplayFrame>,
     score_frame: FrameBuf<BinaryColor, DisplayFrame>,
-    dice_frame: FrameBuf<BinaryColor, DisplayFrame>,
+    picked_dice_frame: FrameBuf<BinaryColor, DisplayFrame>,
 }
 
 impl CachedFrames {
@@ -241,7 +241,7 @@ impl CachedFrames {
             you_won_frame: new_frame_buffer(buffer),
             fish_frame: new_frame_buffer(buffer),
             score_frame: new_frame_buffer(buffer),
-            dice_frame: new_frame_buffer(buffer),
+            picked_dice_frame: new_frame_buffer(buffer),
         }
     }
 
@@ -258,8 +258,8 @@ impl CachedFrames {
         }
     }
 
-    fn draw_dice(&self, display: &mut Display) -> Result<(), DisplayError> {
-        display.draw_iter(&self.dice_frame)
+    fn draw_picked_dice(&self, display: &mut Display) -> Result<(), DisplayError> {
+        display.draw_iter(&self.picked_dice_frame)
     }
 }
 
@@ -288,7 +288,7 @@ async fn display_animations_task(
                             .draw_message(&mut display, &game_state)
                             .unwrap();
                     } else {
-                        cached_frames.draw_dice(&mut display).unwrap();
+                        cached_frames.draw_picked_dice(&mut display).unwrap();
                     }
                     display.flush().await.unwrap();
                     show_message = !show_message;
@@ -298,12 +298,12 @@ async fn display_animations_task(
                 GameState::Won(frame) | GameState::Fish(frame) => {
                     display_state_channel.send(DisplayState::Blink).await;
                     game_state = state;
-                    cached_frames.dice_frame = new_frame_buffer(frame);
+                    cached_frames.picked_dice_frame = new_frame_buffer(frame);
                 }
                 GameState::GameOver(frame, score) => {
                     display_state_channel.send(DisplayState::Blink).await;
                     game_state = state;
-                    cached_frames.dice_frame = new_frame_buffer(frame);
+                    cached_frames.picked_dice_frame = new_frame_buffer(frame);
                     cached_frames.score_frame.clear(BinaryColor::Off).unwrap();
                     messages::big_centered_message(
                         score.to_string().as_str(),
