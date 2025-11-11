@@ -244,6 +244,23 @@ impl CachedFrames {
             dice_frame: new_frame_buffer(buffer),
         }
     }
+
+    fn draw_message(
+        &self,
+        display: &mut Display,
+        game_state: &GameState,
+    ) -> Result<(), DisplayError> {
+        match game_state {
+            GameState::Won(_) => display.draw_iter(&self.you_won_frame),
+            GameState::Fish(_) => display.draw_iter(&self.fish_frame),
+            GameState::GameOver(_, _) => display.draw_iter(&self.score_frame),
+            _ => Ok(()),
+        }
+    }
+
+    fn draw_dice(&self, display: &mut Display) -> Result<(), DisplayError> {
+        display.draw_iter(&self.dice_frame)
+    }
 }
 
 #[embassy_executor::task]
@@ -267,9 +284,11 @@ async fn display_animations_task(
                     let mut display = display.lock().await;
 
                     if show_message {
-                        draw_message(&mut display, &game_state, &cached_frames).unwrap();
+                        cached_frames
+                            .draw_message(&mut display, &game_state)
+                            .unwrap();
                     } else {
-                        display.draw_iter(&cached_frames.dice_frame).unwrap();
+                        cached_frames.draw_dice(&mut display).unwrap();
                     }
                     display.flush().await.unwrap();
                     show_message = !show_message;
@@ -299,19 +318,6 @@ async fn display_animations_task(
                 }
             },
         }
-    }
-}
-
-fn draw_message(
-    display: &mut Display,
-    game_state: &GameState,
-    cached_frames: &CachedFrames,
-) -> Result<(), DisplayError> {
-    match game_state {
-        GameState::Won(_) => display.draw_iter(&cached_frames.you_won_frame),
-        GameState::Fish(_) => display.draw_iter(&cached_frames.fish_frame),
-        GameState::GameOver(_, _) => display.draw_iter(&cached_frames.score_frame),
-        _ => Ok(()),
     }
 }
 
