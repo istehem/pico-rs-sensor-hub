@@ -21,8 +21,7 @@ impl<DisplayError> From<U8g2Error<DisplayError>> for DrawError<DisplayError> {
 
 pub enum FontError {
     Infallible(Infallible),
-    BackgroundColorNotSupported(U8g2Error<Infallible>),
-    GlyphNotFound(U8g2Error<Infallible>),
+    U8g2Error(U8g2Error<Infallible>),
 }
 
 impl From<Infallible> for FontError {
@@ -35,8 +34,7 @@ impl fmt::Debug for FontError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Infallible(err) => err.fmt(f),
-            Self::GlyphNotFound(err) => err.fmt(f),
-            Self::BackgroundColorNotSupported(err) => err.fmt(f),
+            Self::U8g2Error(err) => err.fmt(f),
         }
     }
 }
@@ -44,9 +42,9 @@ impl fmt::Debug for FontError {
 impl From<U8g2Error<Infallible>> for FontError {
     fn from(e: U8g2Error<Infallible>) -> Self {
         match e {
-            U8g2Error::DisplayError(e) => Self::Infallible(e),
-            err @ U8g2Error::BackgroundColorNotSupported => Self::BackgroundColorNotSupported(err),
-            err @ U8g2Error::GlyphNotFound(_) => Self::GlyphNotFound(err),
+            U8g2Error::DisplayError(err) => Self::Infallible(err),
+            err @ U8g2Error::BackgroundColorNotSupported => Self::U8g2Error(err),
+            err @ U8g2Error::GlyphNotFound(_) => Self::U8g2Error(err),
         }
     }
 }
