@@ -20,10 +20,7 @@ use embedded_graphics::{draw_target::DrawTarget, pixelcolor::BinaryColor};
 use rand::rngs::SmallRng;
 use rand::SeedableRng;
 use ssd1306::{
-    mode::{BufferedGraphicsModeAsync, DisplayConfigAsync},
-    prelude::I2CInterface,
-    rotation::DisplayRotation,
-    size::DisplaySize128x64,
+    mode::DisplayConfigAsync, rotation::DisplayRotation, size::DisplaySize128x64,
     I2CDisplayInterface, Ssd1306Async,
 };
 use static_cell::StaticCell;
@@ -40,8 +37,8 @@ mod player;
 use crate::player::GameResult;
 mod cache;
 use crate::cache::FrameCache;
-use crate::entities::GameState;
 mod entities;
+use crate::entities::{Display, GameState};
 
 #[global_allocator]
 static HEAP: LlffHeap = LlffHeap::empty();
@@ -49,11 +46,6 @@ static HEAP: LlffHeap = LlffHeap::empty();
 const I2C_FREQUENCY: u32 = 400_000;
 const ONE_SECOND_IN_MUS: u64 = 1000000;
 
-type Display = Ssd1306Async<
-    I2CInterface<I2c<'static, I2C1, i2c::Async>>,
-    DisplaySize128x64,
-    BufferedGraphicsModeAsync<DisplaySize128x64>,
->;
 type DisplayMutex = Mutex<NoopRawMutex, Display>;
 static DISPLAY: StaticCell<DisplayMutex> = StaticCell::new();
 
