@@ -24,18 +24,18 @@ pub enum FontError {
     U8g2Error(U8g2Error<Infallible>),
 }
 
-impl From<Infallible> for FontError {
-    fn from(e: Infallible) -> Self {
-        FontError::Infallible(e)
-    }
-}
-
 impl fmt::Debug for FontError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Infallible(err) => err.fmt(f),
             Self::U8g2Error(err) => err.fmt(f),
         }
+    }
+}
+
+impl From<Infallible> for FontError {
+    fn from(e: Infallible) -> Self {
+        FontError::Infallible(e)
     }
 }
 
