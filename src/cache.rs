@@ -10,7 +10,7 @@ use embedded_graphics_framebuf::FrameBuf;
 use pico_display::messages;
 
 use crate::entities::{Display, DisplayFrame, GameState};
-use crate::error::InfallibleDrawError;
+use crate::error::FontError;
 
 pub struct FrameCache {
     you_won_frame: FrameBuf<BinaryColor, DisplayFrame>,
@@ -20,7 +20,7 @@ pub struct FrameCache {
 }
 
 impl FrameCache {
-    pub fn init() -> Result<Self, InfallibleDrawError> {
+    pub fn init() -> Result<Self, FontError> {
         let buffer = [BinaryColor::Off; 8192];
 
         let mut you_won_frame = new_frame_buffer(buffer);
@@ -37,7 +37,7 @@ impl FrameCache {
         })
     }
 
-    pub fn update_score_frame(&mut self, score: i8) -> Result<(), InfallibleDrawError> {
+    pub fn update_score_frame(&mut self, score: i8) -> Result<(), FontError> {
         self.score_frame.clear(BinaryColor::Off)?;
         messages::big_centered_message(score.to_string().as_str(), &mut self.score_frame)?;
         Ok(())

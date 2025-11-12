@@ -19,23 +19,24 @@ impl<DisplayError> From<u8g2_fonts::Error<DisplayError>> for DrawError<DisplayEr
 }
 
 #[derive(Debug)]
-pub enum InfallibleDrawError {
-    InfallibleFontError(()),
-    Infallible(Infallible),
+pub enum FontError {
+    Infallible,
+    BackgroundColorNotSupported,
+    GlyphNotFound,
 }
 
-impl From<Infallible> for InfallibleDrawError {
-    fn from(e: Infallible) -> Self {
-        InfallibleDrawError::Infallible(e)
+impl From<Infallible> for FontError {
+    fn from(_: Infallible) -> Self {
+        FontError::Infallible
     }
 }
 
-impl From<u8g2_fonts::Error<Infallible>> for InfallibleDrawError {
+impl From<u8g2_fonts::Error<Infallible>> for FontError {
     fn from(e: u8g2_fonts::Error<Infallible>) -> Self {
         match e {
-            u8g2_fonts::Error::BackgroundColorNotSupported => Self::InfallibleFontError(()),
-            u8g2_fonts::Error::GlyphNotFound(_) => Self::InfallibleFontError(()),
-            u8g2_fonts::Error::DisplayError(e) => Self::Infallible(e),
+            u8g2_fonts::Error::DisplayError(_) => Self::Infallible,
+            u8g2_fonts::Error::BackgroundColorNotSupported => Self::BackgroundColorNotSupported,
+            u8g2_fonts::Error::GlyphNotFound(_) => Self::GlyphNotFound,
         }
     }
 }
