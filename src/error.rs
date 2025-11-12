@@ -43,8 +43,7 @@ impl From<U8g2Error<Infallible>> for FontError {
     fn from(e: U8g2Error<Infallible>) -> Self {
         match e {
             U8g2Error::DisplayError(err) => Self::Infallible(err),
-            err @ U8g2Error::BackgroundColorNotSupported => Self::U8g2Error(err),
-            err @ U8g2Error::GlyphNotFound(_) => Self::U8g2Error(err),
+            err => Self::U8g2Error(err),
         }
     }
 }
