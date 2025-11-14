@@ -11,6 +11,7 @@ license = "MIT OR Apache-2.0"
 ignored = ["portable-atomic"]
 
 [dependencies]
+am2320 = "0.2.0"
 cortex-m-rt = "0.7"
 defmt = "1"
 defmt-rtt = "1"

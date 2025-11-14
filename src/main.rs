@@ -3,6 +3,7 @@
 
 extern crate alloc;
 
+use am2320::Am2320;
 use defmt::info;
 use display_interface::DisplayError;
 use embassy_executor::Spawner;
@@ -14,7 +15,7 @@ use embassy_rp::{
     peripherals::I2C1,
 };
 use embassy_sync::{blocking_mutex::raw::NoopRawMutex, channel::Channel, mutex::Mutex};
-use embassy_time::{Instant, Timer};
+use embassy_time::{Delay, Instant, Timer};
 use embedded_alloc::LlffHeap;
 use embedded_graphics::{draw_target::DrawTarget, pixelcolor::BinaryColor};
 use rand::rngs::SmallRng;
@@ -274,4 +275,13 @@ async fn display_state_handler_task(
 
 async fn set_invert_display(display: &DisplayMutex, invert: bool) -> Result<(), DisplayError> {
     display.lock().await.set_invert(invert).await
+}
+
+#[embassy_executor::task]
+async fn temperature_and_humidity_task(i2c: I2c<'static, I2C1, embassy_rp::i2c::Async>) {
+    let delay = Delay {};
+    let mut am2320 = Am2320::new(i2c, delay);
+
+    let measurement = am2320.read().unwrap();
+    info!("temperature is {:?}", measurement.temperature);
 }
