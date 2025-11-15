@@ -1,8 +1,3 @@
-#![no_std]
-#![no_main]
-
-extern crate alloc;
-
 use defmt::info;
 use display_interface::DisplayError;
 use embassy_executor::Spawner;
@@ -31,19 +26,11 @@ use embedded_graphics_framebuf::FrameBuf;
 use game_logic::two_four_eighteen::Game;
 use pico_display::messages;
 
-mod error;
 use crate::error::DrawError;
-mod player;
+use crate::player;
 use crate::player::GameResult;
-mod cache;
 use crate::cache::FrameCache;
-mod entities;
 use crate::entities::{Display, GameState};
-mod temperature_and_humidity;
-mod game;
-
-#[global_allocator]
-static HEAP: LlffHeap = LlffHeap::empty();
 
 const I2C_FREQUENCY: u32 = 400_000;
 const ONE_SECOND_IN_MUS: u64 = 1000000;
@@ -63,78 +50,8 @@ enum DisplayState {
 type DisplayStateChannel = Channel<NoopRawMutex, DisplayState, 4>;
 static DISPLAY_STATE_CHANNEL: StaticCell<DisplayStateChannel> = StaticCell::new();
 
-bind_interrupts!(struct Irqs {
-    I2C1_IRQ => i2c::InterruptHandler<I2C1>;
-});
-
 type GameStateChannel = Channel<NoopRawMutex, GameState, 4>;
 static GAME_STATE_CHANNEL: StaticCell<GameStateChannel> = StaticCell::new();
-
-#[embassy_executor::main]
-async fn main(spawner: Spawner) {
-    {
-        unsafe { HEAP.init(cortex_m_rt::heap_start() as usize, 8 * 1024) }
-    }
-    let p = embassy_rp::init(Default::default());
-
-    let roll_channel = ROLL_CHANNEL.init(Channel::new());
-
-    let led = Output::new(p.PIN_25, Level::Low);
-    let sensor = Input::new(p.PIN_21, Pull::Up);
-
-    spawner
-        .spawn(break_beam_roller_task(sensor, led, roll_channel))
-        .unwrap();
-
-    #[cfg(not(feature = "temperature"))]
-    {
-        let mut config = I2cConfig::default();
-        config.frequency = I2C_FREQUENCY;
-        let i2c = I2c::new_async(p.I2C1, p.PIN_7, p.PIN_6, Irqs, config);
-        let interface = I2CDisplayInterface::new(i2c);
-
-        let mut display = Ssd1306Async::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
-            .into_buffered_graphics_mode();
-        display.init().await.unwrap();
-        display.clear(BinaryColor::Off).unwrap();
-        messages::medium_sized_centered_message(
-            "Break the beam for\n at least one second\n to start the game.",
-            &mut display,
-        )
-        .unwrap();
-        display.flush().await.unwrap();
-
-        let display = DISPLAY.init(Mutex::new(display));
-        let display_state_channel = DISPLAY_STATE_CHANNEL.init(Channel::new());
-
-        let game_state_channel = GAME_STATE_CHANNEL.init(Channel::new());
-        spawner
-            .spawn(play_and_draw_task(
-                display,
-                roll_channel,
-                game_state_channel,
-            ))
-            .unwrap();
-        spawner
-            .spawn(display_state_handler_task(display, display_state_channel))
-            .unwrap();
-        spawner
-            .spawn(display_animations_task(
-                display,
-                game_state_channel,
-                display_state_channel,
-            ))
-            .unwrap();
-    }
-
-    #[cfg(feature = "temperature")]
-    {
-        let config = I2cConfig::default();
-        let i2c = I2c::new_async(p.I2C1, p.PIN_11, p.PIN_10, Irqs, config);
-
-        spawner.spawn(temperature_and_humidity::task(i2c)).unwrap();
-    }
-}
 
 #[embassy_executor::task]
 async fn break_beam_roller_task(
@@ -288,4 +205,5 @@ async fn display_state_handler_task(
 async fn set_invert_display(display: &DisplayMutex, invert: bool) -> Result<(), DisplayError> {
     display.lock().await.set_invert(invert).await
 }
+
 
