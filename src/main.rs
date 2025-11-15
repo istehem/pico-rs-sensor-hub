@@ -12,7 +12,7 @@ use embassy_rp::{
     bind_interrupts,
     gpio::{Input, Level, Output, Pull},
     i2c::{self, Config as I2cConfig, I2c},
-    peripherals::I2C1,
+    peripherals::{I2C0, I2C1},
 };
 use embassy_sync::{blocking_mutex::raw::NoopRawMutex, channel::Channel, mutex::Mutex};
 use embassy_time::{Delay, Instant, Timer};
@@ -64,6 +64,7 @@ static DISPLAY_STATE_CHANNEL: StaticCell<DisplayStateChannel> = StaticCell::new(
 
 bind_interrupts!(struct Irqs {
     I2C1_IRQ => i2c::InterruptHandler<I2C1>;
+    I2C0_IRQ => i2c::InterruptHandler<I2C0>;
 });
 
 type GameStateChannel = Channel<NoopRawMutex, GameState, 4>;
@@ -122,6 +123,11 @@ async fn main(spawner: Spawner) {
             display_state_channel,
         ))
         .unwrap();
+
+    let config = I2cConfig::default();
+    let i2c = I2c::new_async(p.I2C0, p.PIN_1, p.PIN_0, Irqs, config);
+
+    spawner.spawn(temperature_and_humidity_task(i2c)).unwrap();
 }
 
 #[embassy_executor::task]
@@ -278,7 +284,7 @@ async fn set_invert_display(display: &DisplayMutex, invert: bool) -> Result<(), 
 }
 
 #[embassy_executor::task]
-async fn temperature_and_humidity_task(i2c: I2c<'static, I2C1, embassy_rp::i2c::Async>) {
+async fn temperature_and_humidity_task(i2c: I2c<'static, I2C0, embassy_rp::i2c::Async>) {
     let delay = Delay {};
     let mut am2320 = Am2320::new(i2c, delay);
 
