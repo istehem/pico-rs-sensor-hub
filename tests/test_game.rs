@@ -73,6 +73,7 @@ mod tests {
         }
         let mut picked: Vec<String> = game
             .picked
+            .dice
             .iter()
             .map(|die| die.value.as_u8().to_string())
             .collect();
