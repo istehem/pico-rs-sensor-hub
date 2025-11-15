@@ -1,18 +1,25 @@
 use defmt::info;
 use display_interface::DisplayError;
+use embassy_executor::Spawner;
 use embassy_futures::select::{select, Either};
 use embassy_rp::gpio::{Input, Output};
+use embassy_rp::i2c::I2c;
+use embassy_rp::peripherals::I2C1;
 use embassy_sync::{blocking_mutex::raw::NoopRawMutex, channel::Channel, mutex::Mutex};
 use embassy_time::{Instant, Timer};
 use embedded_graphics::{draw_target::DrawTarget, pixelcolor::BinaryColor};
 use rand::rngs::SmallRng;
 use rand::SeedableRng;
+use ssd1306::{
+    mode::DisplayConfigAsync, rotation::DisplayRotation, size::DisplaySize128x64,
+    I2CDisplayInterface, Ssd1306Async,
+};
 use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};
 
 use embedded_graphics_framebuf::FrameBuf;
-
 use game_logic::two_four_eighteen::Game;
+use pico_display::messages;
 
 use crate::cache::FrameCache;
 use crate::entities::{Display, GameState};
@@ -38,6 +45,53 @@ pub static DISPLAY_STATE_CHANNEL: StaticCell<DisplayStateChannel> = StaticCell::
 
 type GameStateChannel = Channel<NoopRawMutex, GameState, 4>;
 pub static GAME_STATE_CHANNEL: StaticCell<GameStateChannel> = StaticCell::new();
+
+pub async fn spawn_tasks(
+    spawner: &Spawner,
+    sensor: Input<'static>,
+    led: Output<'static>,
+    i2c: I2c<'static, I2C1, embassy_rp::i2c::Async>,
+) {
+    let roll_channel = ROLL_CHANNEL.init(Channel::new());
+    spawner
+        .spawn(break_beam_roller_task(sensor, led, roll_channel))
+        .unwrap();
+
+    let interface = I2CDisplayInterface::new(i2c);
+
+    let mut display = Ssd1306Async::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
+        .into_buffered_graphics_mode();
+    display.init().await.unwrap();
+    display.clear(BinaryColor::Off).unwrap();
+    messages::medium_sized_centered_message(
+        "Break the beam for\n at least one second\n to start the game.",
+        &mut display,
+    )
+    .unwrap();
+    display.flush().await.unwrap();
+
+    let display = DISPLAY.init(Mutex::new(display));
+    let display_state_channel = DISPLAY_STATE_CHANNEL.init(Channel::new());
+
+    let game_state_channel = GAME_STATE_CHANNEL.init(Channel::new());
+    spawner
+        .spawn(play_and_draw_task(
+            display,
+            roll_channel,
+            game_state_channel,
+        ))
+        .unwrap();
+    spawner
+        .spawn(display_state_handler_task(display, display_state_channel))
+        .unwrap();
+    spawner
+        .spawn(display_animations_task(
+            display,
+            game_state_channel,
+            display_state_channel,
+        ))
+        .unwrap();
+}
 
 #[embassy_executor::task]
 pub async fn break_beam_roller_task(
