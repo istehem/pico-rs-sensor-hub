@@ -30,6 +30,7 @@ pub use game::{
     cache, entities, error, player, DrawError, Input, Level, Output, Pull, I2C_FREQUENCY,
 };
 
+#[cfg(feature = "temperature")]
 mod temperature_and_humidity;
 
 #[global_allocator]
