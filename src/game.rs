@@ -1,60 +1,46 @@
 use defmt::info;
 use display_interface::DisplayError;
-use embassy_executor::Spawner;
 use embassy_futures::select::{select, Either};
-use embassy_rp::{
-    bind_interrupts,
-    gpio::{Input, Level, Output, Pull},
-    i2c::{self, Config as I2cConfig, I2c},
-    peripherals::I2C1,
-};
+use embassy_rp::gpio::{Input, Output};
 use embassy_sync::{blocking_mutex::raw::NoopRawMutex, channel::Channel, mutex::Mutex};
 use embassy_time::{Instant, Timer};
-use embedded_alloc::LlffHeap;
 use embedded_graphics::{draw_target::DrawTarget, pixelcolor::BinaryColor};
 use rand::rngs::SmallRng;
 use rand::SeedableRng;
-use ssd1306::{
-    mode::DisplayConfigAsync, rotation::DisplayRotation, size::DisplaySize128x64,
-    I2CDisplayInterface, Ssd1306Async,
-};
 use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};
 
 use embedded_graphics_framebuf::FrameBuf;
 
 use game_logic::two_four_eighteen::Game;
-use pico_display::messages;
 
-use crate::error::DrawError;
-use crate::player;
-use crate::player::GameResult;
 use crate::cache::FrameCache;
 use crate::entities::{Display, GameState};
+use crate::player;
+use crate::player::GameResult;
 
-const I2C_FREQUENCY: u32 = 400_000;
 const ONE_SECOND_IN_MUS: u64 = 1000000;
 
 type DisplayMutex = Mutex<NoopRawMutex, Display>;
-static DISPLAY: StaticCell<DisplayMutex> = StaticCell::new();
+pub static DISPLAY: StaticCell<DisplayMutex> = StaticCell::new();
 
 type RollChannel = Channel<NoopRawMutex, u64, 4>;
-static ROLL_CHANNEL: StaticCell<RollChannel> = StaticCell::new();
+pub static ROLL_CHANNEL: StaticCell<RollChannel> = StaticCell::new();
 
 #[derive(PartialEq, Clone)]
-enum DisplayState {
+pub enum DisplayState {
     Blink,
     Solid,
 }
 
 type DisplayStateChannel = Channel<NoopRawMutex, DisplayState, 4>;
-static DISPLAY_STATE_CHANNEL: StaticCell<DisplayStateChannel> = StaticCell::new();
+pub static DISPLAY_STATE_CHANNEL: StaticCell<DisplayStateChannel> = StaticCell::new();
 
 type GameStateChannel = Channel<NoopRawMutex, GameState, 4>;
-static GAME_STATE_CHANNEL: StaticCell<GameStateChannel> = StaticCell::new();
+pub static GAME_STATE_CHANNEL: StaticCell<GameStateChannel> = StaticCell::new();
 
 #[embassy_executor::task]
-async fn break_beam_roller_task(
+pub async fn break_beam_roller_task(
     mut sensor: Input<'static>,
     mut led: Output<'static>,
     roll_channel: &'static RollChannel,
@@ -89,7 +75,7 @@ async fn break_beam_roller_task(
 }
 
 #[embassy_executor::task]
-async fn play_and_draw_task(
+pub async fn play_and_draw_task(
     display: &'static DisplayMutex,
     roll_channel: &'static RollChannel,
     game_state_channel: &'static GameStateChannel,
@@ -130,7 +116,7 @@ async fn play_and_draw_task(
 }
 
 #[embassy_executor::task]
-async fn display_animations_task(
+pub async fn display_animations_task(
     display: &'static DisplayMutex,
     game_state_channel: &'static GameStateChannel,
     display_state_channel: &'static DisplayStateChannel,
@@ -178,7 +164,7 @@ async fn display_animations_task(
 }
 
 #[embassy_executor::task]
-async fn display_state_handler_task(
+pub async fn display_state_handler_task(
     display: &'static DisplayMutex,
     display_state_channel: &'static DisplayStateChannel,
 ) {
@@ -205,5 +191,3 @@ async fn display_state_handler_task(
 async fn set_invert_display(display: &DisplayMutex, invert: bool) -> Result<(), DisplayError> {
     display.lock().await.set_invert(invert).await
 }
-
-
