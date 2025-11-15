@@ -16,19 +16,16 @@ use {defmt_rtt as _, panic_probe as _};
 mod game {
     pub use ::embassy_rp::gpio::{Input, Level, Output, Pull};
 
-    pub mod error;
-    pub use self::error::DrawError;
     pub mod cache;
     pub mod entities;
+    pub mod error;
     pub mod player;
     pub mod tasks;
 
     pub const I2C_FREQUENCY: u32 = 400_000;
 }
 #[cfg(not(feature = "temperature"))]
-pub use game::{
-    cache, entities, error, player, DrawError, Input, Level, Output, Pull, I2C_FREQUENCY,
-};
+pub use game::{cache, entities, error, player, Input, Level, Output, Pull, I2C_FREQUENCY};
 
 #[cfg(feature = "temperature")]
 mod temperature_and_humidity;

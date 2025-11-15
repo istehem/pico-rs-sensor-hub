@@ -6,7 +6,7 @@ use embedded_graphics::pixelcolor::BinaryColor;
 use game_logic::two_four_eighteen::{Game, NumberOfDice};
 use pico_display::aliases::Display as DisplayTrait;
 
-use crate::DrawError;
+use crate::error::DrawError;
 
 #[derive(PartialEq)]
 pub enum GameResult {
