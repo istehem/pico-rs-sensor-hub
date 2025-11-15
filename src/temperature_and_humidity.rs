@@ -15,7 +15,7 @@ pub async fn task(i2c: I2c<'static, I2C1, embassy_rp::i2c::Async>) {
                 info!("The temperature is {:?}C", measurement.temperature);
             }
             Err(Error::SensorError) => {
-                info!("measurement failed with a sensor error");
+                info!("The measurement failed with a sensor error.");
             }
             Err(_) => {
                 info!("The measurement failed with a read/write error.");
