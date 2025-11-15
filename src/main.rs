@@ -14,7 +14,6 @@ use {defmt_rtt as _, panic_probe as _};
 
 #[cfg(not(feature = "temperature"))]
 mod game {
-
     pub use ::embassy_rp::gpio::{Input, Level, Output, Pull};
 
     pub mod error;
