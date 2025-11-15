@@ -26,3 +26,11 @@ command = "cargo"
 args = [
 	"test", "--target=x86_64-unknown-linux-gnu", "-p", "tests", "--test", "test-game", "--", "--nocapture"
 ]
+
+
+[tasks.build-temp]
+workspace = false
+command = "cargo"
+args = [
+	"build", "--all", "--features", "temperature"
+]

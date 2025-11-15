@@ -12,7 +12,7 @@ use embassy_rp::{
     bind_interrupts,
     gpio::{Input, Level, Output, Pull},
     i2c::{self, Config as I2cConfig, I2c},
-    peripherals::{I2C0, I2C1},
+    peripherals::I2C1,
 };
 use embassy_sync::{blocking_mutex::raw::NoopRawMutex, channel::Channel, mutex::Mutex};
 use embassy_time::{Delay, Instant, Timer};
@@ -64,7 +64,6 @@ static DISPLAY_STATE_CHANNEL: StaticCell<DisplayStateChannel> = StaticCell::new(
 
 bind_interrupts!(struct Irqs {
     I2C1_IRQ => i2c::InterruptHandler<I2C1>;
-    I2C0_IRQ => i2c::InterruptHandler<I2C0>;
 });
 
 type GameStateChannel = Channel<NoopRawMutex, GameState, 4>;
@@ -86,48 +85,54 @@ async fn main(spawner: Spawner) {
         .spawn(break_beam_roller_task(sensor, led, roll_channel))
         .unwrap();
 
-    let mut config = I2cConfig::default();
-    config.frequency = I2C_FREQUENCY;
-    let i2c = I2c::new_async(p.I2C1, p.PIN_7, p.PIN_6, Irqs, config);
-    let interface = I2CDisplayInterface::new(i2c);
+    #[cfg(not(feature = "temperature"))]
+    {
+        let mut config = I2cConfig::default();
+        config.frequency = I2C_FREQUENCY;
+        let i2c = I2c::new_async(p.I2C1, p.PIN_7, p.PIN_6, Irqs, config);
+        let interface = I2CDisplayInterface::new(i2c);
 
-    let mut display = Ssd1306Async::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
-        .into_buffered_graphics_mode();
-    display.init().await.unwrap();
-    display.clear(BinaryColor::Off).unwrap();
-    messages::medium_sized_centered_message(
-        "Break the beam for\n at least one second\n to start the game.",
-        &mut display,
-    )
-    .unwrap();
-    display.flush().await.unwrap();
-
-    let display = DISPLAY.init(Mutex::new(display));
-    let display_state_channel = DISPLAY_STATE_CHANNEL.init(Channel::new());
-
-    let game_state_channel = GAME_STATE_CHANNEL.init(Channel::new());
-    spawner
-        .spawn(play_and_draw_task(
-            display,
-            roll_channel,
-            game_state_channel,
-        ))
+        let mut display = Ssd1306Async::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
+            .into_buffered_graphics_mode();
+        display.init().await.unwrap();
+        display.clear(BinaryColor::Off).unwrap();
+        messages::medium_sized_centered_message(
+            "Break the beam for\n at least one second\n to start the game.",
+            &mut display,
+        )
         .unwrap();
-    spawner
-        .spawn(display_state_handler_task(display, display_state_channel))
-        .unwrap();
-    spawner
-        .spawn(display_animations_task(
-            display,
-            game_state_channel,
-            display_state_channel,
-        ))
-        .unwrap();
+        display.flush().await.unwrap();
 
-    let config = I2cConfig::default();
-    let i2c = I2c::new_async(p.I2C0, p.PIN_1, p.PIN_0, Irqs, config);
+        let display = DISPLAY.init(Mutex::new(display));
+        let display_state_channel = DISPLAY_STATE_CHANNEL.init(Channel::new());
 
-    spawner.spawn(temperature_and_humidity_task(i2c)).unwrap();
+        let game_state_channel = GAME_STATE_CHANNEL.init(Channel::new());
+        spawner
+            .spawn(play_and_draw_task(
+                display,
+                roll_channel,
+                game_state_channel,
+            ))
+            .unwrap();
+        spawner
+            .spawn(display_state_handler_task(display, display_state_channel))
+            .unwrap();
+        spawner
+            .spawn(display_animations_task(
+                display,
+                game_state_channel,
+                display_state_channel,
+            ))
+            .unwrap();
+    }
+
+    #[cfg(feature = "temperature")]
+    {
+        let config = I2cConfig::default();
+        let i2c = I2c::new_async(p.I2C1, p.PIN_11, p.PIN_10, Irqs, config);
+
+        spawner.spawn(temperature_and_humidity_task(i2c)).unwrap();
+    }
 }
 
 #[embassy_executor::task]
@@ -284,7 +289,7 @@ async fn set_invert_display(display: &DisplayMutex, invert: bool) -> Result<(), 
 }
 
 #[embassy_executor::task]
-async fn temperature_and_humidity_task(i2c: I2c<'static, I2C0, embassy_rp::i2c::Async>) {
+async fn temperature_and_humidity_task(i2c: I2c<'static, I2C1, embassy_rp::i2c::Async>) {
     let delay = Delay {};
     let mut am2320 = Am2320::new(i2c, delay);
 
