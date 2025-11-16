@@ -29,22 +29,22 @@ use crate::player::GameResult;
 const ONE_SECOND_IN_MUS: u64 = 1000000;
 
 type DisplayMutex = Mutex<NoopRawMutex, Display>;
-pub static DISPLAY: StaticCell<DisplayMutex> = StaticCell::new();
+static DISPLAY: StaticCell<DisplayMutex> = StaticCell::new();
 
 type RollChannel = Channel<NoopRawMutex, u64, 4>;
-pub static ROLL_CHANNEL: StaticCell<RollChannel> = StaticCell::new();
+static ROLL_CHANNEL: StaticCell<RollChannel> = StaticCell::new();
 
 #[derive(PartialEq, Clone)]
-pub enum DisplayState {
+enum DisplayState {
     Blink,
     Solid,
 }
 
 type DisplayStateChannel = Channel<NoopRawMutex, DisplayState, 4>;
-pub static DISPLAY_STATE_CHANNEL: StaticCell<DisplayStateChannel> = StaticCell::new();
+static DISPLAY_STATE_CHANNEL: StaticCell<DisplayStateChannel> = StaticCell::new();
 
 type GameStateChannel = Channel<NoopRawMutex, GameState, 4>;
-pub static GAME_STATE_CHANNEL: StaticCell<GameStateChannel> = StaticCell::new();
+static GAME_STATE_CHANNEL: StaticCell<GameStateChannel> = StaticCell::new();
 
 pub async fn spawn_tasks(
     spawner: &Spawner,
