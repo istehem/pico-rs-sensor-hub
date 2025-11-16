@@ -94,7 +94,7 @@ pub async fn spawn_tasks(
 }
 
 #[embassy_executor::task]
-pub async fn break_beam_roller_task(
+async fn break_beam_roller_task(
     mut sensor: Input<'static>,
     mut led: Output<'static>,
     roll_channel: &'static RollChannel,
@@ -129,7 +129,7 @@ pub async fn break_beam_roller_task(
 }
 
 #[embassy_executor::task]
-pub async fn play_and_draw_task(
+async fn play_and_draw_task(
     display: &'static DisplayMutex,
     roll_channel: &'static RollChannel,
     game_state_channel: &'static GameStateChannel,
@@ -170,7 +170,7 @@ pub async fn play_and_draw_task(
 }
 
 #[embassy_executor::task]
-pub async fn display_animations_task(
+async fn display_animations_task(
     display: &'static DisplayMutex,
     game_state_channel: &'static GameStateChannel,
     display_state_channel: &'static DisplayStateChannel,
@@ -218,7 +218,7 @@ pub async fn display_animations_task(
 }
 
 #[embassy_executor::task]
-pub async fn display_state_handler_task(
+async fn display_state_handler_task(
     display: &'static DisplayMutex,
     display_state_channel: &'static DisplayStateChannel,
 ) {
