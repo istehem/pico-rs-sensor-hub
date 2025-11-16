@@ -21,10 +21,10 @@ use embedded_graphics_framebuf::FrameBuf;
 use game_logic::two_four_eighteen::Game;
 use pico_display::messages;
 
-use crate::cache::FrameCache;
-use crate::entities::{Display, GameState};
-use crate::player;
-use crate::player::GameResult;
+use crate::game::cache::FrameCache;
+use crate::game::entities::{Display, GameState};
+use crate::game::player;
+use crate::game::player::GameResult;
 
 const ONE_SECOND_IN_MUS: u64 = 1000000;
 

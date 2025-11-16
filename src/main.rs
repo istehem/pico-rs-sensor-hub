@@ -20,7 +20,6 @@ mod game {
     pub mod player;
     pub mod tasks;
 }
-pub use game::{cache, entities, error, player};
 
 #[cfg(feature = "temperature")]
 mod temperature_and_humidity {

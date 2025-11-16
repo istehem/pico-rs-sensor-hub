@@ -9,8 +9,8 @@ use embedded_graphics_framebuf::FrameBuf;
 
 use pico_display::messages;
 
-use crate::entities::{Display, DisplayFrame, GameState};
-use crate::error::FontError;
+use crate::game::entities::{Display, DisplayFrame, GameState};
+use crate::game::error::FontError;
 
 pub struct FrameCache {
     you_won_frame: FrameBuf<BinaryColor, DisplayFrame>,
