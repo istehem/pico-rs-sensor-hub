@@ -6,6 +6,7 @@ extern crate alloc;
 use embassy_executor::Spawner;
 use embassy_rp::{
     bind_interrupts,
+    gpio::{Input, Level, Output, Pull},
     i2c::{self, Config as I2cConfig, I2c},
     peripherals::I2C1,
 };
@@ -18,16 +19,18 @@ mod game {
     pub mod error;
     pub mod player;
     pub mod tasks;
-
-    pub const I2C_FREQUENCY: u32 = 400_000;
 }
-pub use game::{cache, entities, error, player, I2C_FREQUENCY};
+pub use game::{cache, entities, error, player};
 
-pub use ::embassy_rp::gpio::{Input, Level, Output, Pull};
 #[cfg(feature = "temperature")]
-mod temperature_and_humidity;
+mod temperature_and_humidity {
+    pub mod tasks;
+    pub use embassy_rp::gpio::Flex;
+}
 #[cfg(feature = "temperature")]
-pub use ::embassy_rp::gpio::Flex;
+pub use temperature_and_humidity::Flex;
+
+const I2C_FREQUENCY: u32 = 400_000;
 
 #[global_allocator]
 static HEAP: LlffHeap = LlffHeap::empty();
@@ -55,6 +58,6 @@ async fn main(spawner: Spawner) {
     #[cfg(feature = "temperature")]
     {
         let pin = Flex::new(p.PIN_17);
-        spawner.spawn(temperature_and_humidity::task(pin)).unwrap();
+        temperature_and_humidity::tasks::spawn_tasks(&spawner, pin).await;
     }
 }
