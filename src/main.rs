@@ -12,10 +12,7 @@ use embassy_rp::{
 use embedded_alloc::LlffHeap;
 use {defmt_rtt as _, panic_probe as _};
 
-#[cfg(not(feature = "temperature"))]
 mod game {
-    pub use ::embassy_rp::gpio::{Input, Level, Output, Pull};
-
     pub mod cache;
     pub mod entities;
     pub mod error;
@@ -24,11 +21,13 @@ mod game {
 
     pub const I2C_FREQUENCY: u32 = 400_000;
 }
-#[cfg(not(feature = "temperature"))]
-pub use game::{cache, entities, error, player, Input, Level, Output, Pull, I2C_FREQUENCY};
+pub use game::{cache, entities, error, player, I2C_FREQUENCY};
 
+pub use ::embassy_rp::gpio::{Input, Level, Output, Pull};
 #[cfg(feature = "temperature")]
 mod temperature_and_humidity;
+#[cfg(feature = "temperature")]
+pub use ::embassy_rp::gpio::Flex;
 
 #[global_allocator]
 static HEAP: LlffHeap = LlffHeap::empty();
@@ -44,23 +43,18 @@ async fn main(spawner: Spawner) {
     }
     let p = embassy_rp::init(Default::default());
 
-    #[cfg(not(feature = "temperature"))]
-    {
-        let mut config = I2cConfig::default();
-        config.frequency = I2C_FREQUENCY;
+    let mut config = I2cConfig::default();
+    config.frequency = I2C_FREQUENCY;
 
-        let led = Output::new(p.PIN_25, Level::Low);
-        let sensor = Input::new(p.PIN_21, Pull::Up);
-        let i2c = I2c::new_async(p.I2C1, p.PIN_7, p.PIN_6, Irqs, config);
+    let led = Output::new(p.PIN_25, Level::Low);
+    let sensor = Input::new(p.PIN_21, Pull::Up);
+    let i2c = I2c::new_async(p.I2C1, p.PIN_7, p.PIN_6, Irqs, config);
 
-        game::tasks::spawn_tasks(&spawner, sensor, led, i2c).await
-    }
+    game::tasks::spawn_tasks(&spawner, sensor, led, i2c).await;
 
     #[cfg(feature = "temperature")]
     {
-        let config = I2cConfig::default();
-        let i2c = I2c::new_blocking(p.I2C1, p.PIN_11, p.PIN_10, config);
-
-        spawner.spawn(temperature_and_humidity::task(i2c)).unwrap();
+        let pin = Flex::new(p.PIN_17);
+        spawner.spawn(temperature_and_humidity::task(pin)).unwrap();
     }
 }

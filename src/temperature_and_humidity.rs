@@ -1,24 +1,23 @@
-use am2320::{Am2320, Error};
 use defmt::info;
-use embassy_rp::{i2c::I2c, peripherals::I2C1};
-use embassy_time::{Delay, Timer};
+use embassy_dht_sensor::DHTSensor;
+use embassy_rp::gpio::Flex;
+use embassy_time::Timer;
 
 #[embassy_executor::task]
-pub async fn task(i2c: I2c<'static, I2C1, embassy_rp::i2c::Blocking>) {
-    let delay = Delay {};
-    let mut am2320 = Am2320::new(i2c, delay);
+pub async fn task(pin: Flex<'static>) {
+    let mut dht_sensor = DHTSensor::new(pin);
 
     loop {
-        let measurement = am2320.read();
+        let measurement = dht_sensor.read();
         match measurement {
             Ok(measurement) => {
-                info!("The temperature is {:?}C", measurement.temperature);
-            }
-            Err(Error::SensorError) => {
-                info!("The measurement failed with a sensor error.");
+                info!(
+                    "Temperature: {:?}, Humidity: {:?}",
+                    measurement.temperature, measurement.humidity
+                );
             }
             Err(_) => {
-                info!("The measurement failed with a read/write error.");
+                info!("Error reading from DHT sensor");
             }
         }
         Timer::after_millis(3000).await;
