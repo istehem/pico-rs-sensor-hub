@@ -34,3 +34,10 @@ command = "cargo"
 args = [
 	"build", "--all", "--features", "temperature"
 ]
+
+[tasks.run-temp]
+workspace = false
+command = "cargo"
+args = [
+	"run", "--release", "--features", "temperature"
+]

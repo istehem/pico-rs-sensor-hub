@@ -59,7 +59,7 @@ async fn main(spawner: Spawner) {
     #[cfg(feature = "temperature")]
     {
         let config = I2cConfig::default();
-        let i2c = I2c::new_async(p.I2C1, p.PIN_11, p.PIN_10, Irqs, config);
+        let i2c = I2c::new_blocking(p.I2C1, p.PIN_11, p.PIN_10, config);
 
         spawner.spawn(temperature_and_humidity::task(i2c)).unwrap();
     }
