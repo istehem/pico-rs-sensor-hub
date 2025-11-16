@@ -24,6 +24,7 @@ pub use game::{cache, entities, error, player};
 
 #[cfg(feature = "temperature")]
 mod temperature_and_humidity {
+    pub mod error;
     pub mod tasks;
     pub use embassy_rp::gpio::Flex;
 }
