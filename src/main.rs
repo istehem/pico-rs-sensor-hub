@@ -25,10 +25,14 @@ mod game {
 mod temperature_and_humidity {
     pub mod error;
     pub mod tasks;
-    pub use embassy_rp::gpio::Flex;
+    pub use embassy_rp::{
+        gpio::Flex,
+        peripherals::PIO0,
+        pio::{InterruptHandler, Pio},
+    };
 }
 #[cfg(feature = "temperature")]
-pub use temperature_and_humidity::Flex;
+pub use temperature_and_humidity::{Flex, InterruptHandler, Pio, PIO0};
 
 const I2C_FREQUENCY: u32 = 400_000;
 
@@ -37,6 +41,8 @@ static HEAP: LlffHeap = LlffHeap::empty();
 
 bind_interrupts!(struct Irqs {
     I2C1_IRQ => i2c::InterruptHandler<I2C1>;
+    #[cfg(feature = "temperature")]
+    PIO0_IRQ_0 => InterruptHandler<PIO0>;
 });
 
 #[embassy_executor::main]
@@ -57,7 +63,12 @@ async fn main(spawner: Spawner) {
 
     #[cfg(feature = "temperature")]
     {
-        let pin = Flex::new(p.PIN_17);
-        temperature_and_humidity::tasks::spawn_tasks(&spawner, pin).await;
+        let pio = p.PIO0;
+        let Pio {
+            mut common, sm0, ..
+        } = Pio::new(pio, Irqs);
+        let pin = common.make_pio_pin(p.PIN_17);
+
+        temperature_and_humidity::tasks::spawn_tasks(&spawner, pin, common, sm0).await;
     }
 }

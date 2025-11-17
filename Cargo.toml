@@ -14,7 +14,7 @@ ignored = ["portable-atomic"]
 cortex-m-rt = "0.7"
 defmt = "1"
 defmt-rtt = "1"
-embassy-dht-sensor = { version = "0.2.7", default-features = false, features = ["rp2040", "dht2x", "rp_no_pio"], optional = true }
+embassy-dht-sensor = { version = "0.2.7", optional = true }
 display-interface = "0.5.0"
 embedded-alloc = "0.6.0"
 embedded-graphics = { workspace = true }
