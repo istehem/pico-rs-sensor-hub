@@ -2,42 +2,92 @@
 workspace = false
 command = "cargo"
 args = [
-	# run `cargo upgrade --dry-run` to check versions defined in [workspace.dependencies]
-	"outdated", "-w", "--root-deps-only"
+  # run `cargo upgrade --dry-run` to check versions defined in [workspace.dependencies]
+  "outdated",
+  "-w",
+  "--root-deps-only",
 ]
 
 [tasks.test]
 workspace = false
 command = "cargo"
 args = [
-	"test", "--target=x86_64-unknown-linux-gnu", "-p", "tests", "--", "--nocapture"
+  "test",
+  "--target=x86_64-unknown-linux-gnu",
+  "-p",
+  "tests",
+  "--",
+  "--nocapture",
 ]
 
 [tasks.test-player]
 workspace = false
 command = "cargo"
 args = [
-	"test", "--target=x86_64-unknown-linux-gnu", "-p", "tests", "--test", "test-player", "--", "--nocapture"
+  "test",
+  "--target=x86_64-unknown-linux-gnu",
+  "-p",
+  "tests",
+  "--test",
+  "test-player",
+  "--",
+  "--nocapture",
 ]
 
 [tasks.test-game]
 workspace = false
 command = "cargo"
 args = [
-	"test", "--target=x86_64-unknown-linux-gnu", "-p", "tests", "--test", "test-game", "--", "--nocapture"
+  "test",
+  "--target=x86_64-unknown-linux-gnu",
+  "-p",
+  "tests",
+  "--test",
+  "test-game",
+  "--",
+  "--nocapture",
 ]
 
-
-[tasks.build-temp]
+[tasks.fmt]
 workspace = false
 command = "cargo"
-args = [
-	"build", "--all", "--features", "temperature"
-]
+args = ["fmt"]
 
-[tasks.run-temp]
+[tasks.build-all]
 workspace = false
 command = "cargo"
-args = [
-	"run", "--release", "--features", "temperature"
+args = ["build", "--all"]
+
+[tasks.build-temperature]
+workspace = false
+command = "cargo"
+args = ["build", "--all", "--features", "temperature"]
+
+[tasks.run-temperature]
+workspace = false
+command = "cargo"
+args = ["run", "--release", "--features", "temperature"]
+
+[tasks.clippy-all]
+workspace = false
+command = "cargo"
+args = ["clippy", "--all"]
+
+[tasks.clippy-temperature]
+workspace = false
+command = "cargo"
+args = ["clippy", "--all", "--features", "temperature"]
+
+[tasks.clippy]
+dependencies = ["clippy-all", "clippy-temperature"]
+workspace = false
+
+[tasks.ci-check]
+dependencies = [
+  "fmt",
+  "build-all",
+  "build-temperature",
+  "clippy-all",
+  "clippy-temperature",
 ]
+workspace = false
