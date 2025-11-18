@@ -8,14 +8,14 @@ pub enum FormattableDHTSensorError {
 impl defmt::Format for FormattableDHTSensorError {
     fn format(&self, fmt: defmt::Formatter<'_>) {
         match self {
-            Self::DHTSensorError(DHTSensorError::NoData) => defmt::write!(fmt, "{:x}", "NoData"),
+            Self::DHTSensorError(DHTSensorError::NoData) => defmt::write!(fmt, "{}", "NoData"),
             Self::DHTSensorError(DHTSensorError::ChecksumError) => {
-                defmt::write!(fmt, "{:x}", "ChecksumError")
+                defmt::write!(fmt, "{}", "ChecksumError")
             }
             Self::DHTSensorError(DHTSensorError::InvalidData) => {
-                defmt::write!(fmt, "{:x}", "InvalidData")
+                defmt::write!(fmt, "{}", "InvalidData")
             }
-            Self::DHTSensorError(DHTSensorError::Timeout) => defmt::write!(fmt, "{:x}", "Timeout"),
+            Self::DHTSensorError(DHTSensorError::Timeout) => defmt::write!(fmt, "{}", "Timeout"),
         }
     }
 }
