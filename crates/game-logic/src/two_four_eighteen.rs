@@ -94,13 +94,18 @@ impl Game {
         picked.append(&mut self.picked);
 
         if !has_four(&picked) {
-            picked.append(&mut dice.pick(FaceValue::Four, Some(1)));
+            picked.append(&mut dice.pick(|value| value == FaceValue::Four, Some(1)));
         }
         if !has_two(&picked) {
-            picked.append(&mut dice.pick(FaceValue::Two, Some(1)));
+            picked.append(&mut dice.pick(|value| value == FaceValue::Two, Some(1)));
         }
         if !has_fish(&picked) {
-            picked.append(&mut dice.pick(FaceValue::Six, None));
+            picked.append(&mut dice.pick(|value| value == FaceValue::Six, None));
+            if can_win(&picked) {
+                picked.append(&mut dice.pick(|value| value == FaceValue::Six, None));
+            } else {
+                picked.append(&mut dice.pick(|value| value > FaceValue::Three, None));
+            }
         }
         // at least one die needs to be picked
         if self.dice_left == (NumberOfDice::Five - picked.len() as u8) {
@@ -133,6 +138,23 @@ impl Game {
     pub fn has_won(&self) -> bool {
         self.score() == 18
     }
+}
+
+fn can_win(picked_dice: &Dice) -> bool {
+    let mut count_4 = 0;
+    let mut count_2 = 0;
+    picked_dice.dice.iter().all(|&x| match x.value {
+        FaceValue::Four => {
+            count_4 += 1;
+            count_4 <= 1
+        }
+        FaceValue::Two => {
+            count_2 += 1;
+            count_2 <= 1
+        }
+        FaceValue::Six => true,
+        _ => false,
+    })
 }
 
 fn has_fish(dice: &Dice) -> bool {
