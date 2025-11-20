@@ -36,13 +36,13 @@ async fn read_sensor_task(
         match measurement {
             Ok(measurement) => {
                 info!(
-                    "Temperature: {:?}, Humidity: {:?}",
+                    "Temperature: {}, Humidity: {}",
                     measurement.temperature, measurement.humidity
                 );
             }
             Err(err) => {
                 info!(
-                    "Error reading from DHT sensor: {:?}",
+                    "Error reading from DHT sensor: {}",
                     FormattableDHTSensorError::from(err)
                 );
             }
