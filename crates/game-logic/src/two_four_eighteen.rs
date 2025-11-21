@@ -100,7 +100,7 @@ impl Game {
             picked.append(&mut dice.pick(|value| value == FaceValue::Two, Some(1)));
         }
         if !has_fish(&picked) {
-            if can_win(&picked) {
+            if can_win(&picked) && has(&dice.dice, FaceValue::Six) {
                 picked.append(&mut dice.pick(|value| value == FaceValue::Six, None));
             } else {
                 picked.append(&mut dice.pick(|value| value > FaceValue::Three, None));
