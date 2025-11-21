@@ -100,7 +100,6 @@ impl Game {
             picked.append(&mut dice.pick(|value| value == FaceValue::Two, Some(1)));
         }
         if !has_fish(&picked) {
-            picked.append(&mut dice.pick(|value| value == FaceValue::Six, None));
             if can_win(&picked) {
                 picked.append(&mut dice.pick(|value| value == FaceValue::Six, None));
             } else {
@@ -109,8 +108,12 @@ impl Game {
         }
         // at least one die needs to be picked
         if self.dice_left == (NumberOfDice::Five - picked.len() as u8) {
-            // there must be a max value since dice were rolled
-            picked.push(dice.max().unwrap());
+            let pic = match dice.max() {
+                Some(die) => die,
+                // there must be a max value since dice were rolled
+                None => unreachable!(),
+            };
+            picked.push(pic);
         }
 
         self.rolled = dice;
