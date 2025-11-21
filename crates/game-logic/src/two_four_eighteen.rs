@@ -100,16 +100,17 @@ impl Game {
             picked.append(&mut dice.pick(|value| value == FaceValue::Two, Some(1)));
         }
         if !has_fish(&picked) {
-            if can_win(&picked) && has_six(&dice) {
-                picked.append(&mut dice.pick(|value| value == FaceValue::Six, None));
-            } else if !self.did_new_pick(&picked) {
+            let pick_over = if can_win(&picked) && has_six(&dice) || self.did_new_pick(&picked) {
+                FaceValue::Five
+            } else {
                 let dice_left = self.dice_left(&picked);
                 if dice_left < NumberOfDice::Three {
-                    picked.append(&mut dice.pick(|value| value > FaceValue::Three, None));
+                    FaceValue::Three
                 } else {
-                    picked.append(&mut dice.pick(|value| value > FaceValue::Four, None));
+                    FaceValue::Four
                 }
-            }
+            };
+            picked.append(&mut dice.pick(|value| value > pick_over, None));
         }
         // at least one die needs to be picked
         if !self.did_new_pick(&picked) {
