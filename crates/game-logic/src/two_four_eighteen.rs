@@ -124,7 +124,6 @@ impl Game {
             FaceValue::Five
         } else {
             let dice_left = dice_left(picked);
-            // TODO double check this logic for e.g. (4, 5, 5)
             if dice_left <= NumberOfDice::Two || count(rolled, |value| value > FaceValue::Four) >= 2
             {
                 // The expection value for rolling a die is 3.5.
