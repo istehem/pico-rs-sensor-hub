@@ -88,7 +88,7 @@ impl Game {
             return;
         }
         let face_value = || self.small_rng.random();
-        let rolled = Dice::roll(face_value, self.dice_left.as_u8() as u32);
+        let mut rolled = Dice::roll(face_value, self.dice_left.as_u8() as u32);
 
         let mut picked = Dice::empty();
         picked.append(&mut self.picked);
@@ -114,16 +114,15 @@ impl Game {
         }
 
         self.rolled = rolled;
+        self.dice_left = dice_left(&picked);
         self.picked = picked;
-
-        self.dice_left = NumberOfDice::Five - self.picked.len() as u8;
     }
 
     fn pick_gt_when_no_fish(&self, rolled: &Dice, picked: &Dice) -> FaceValue {
         if can_win(picked) && (has_six(rolled) || self.did_new_pick(picked)) {
             FaceValue::Five
         } else {
-            let dice_left = self.dice_left(picked);
+            let dice_left = dice_left(picked);
             // TODO double check this logic for e.g. (4, 5, 5)
             if dice_left <= NumberOfDice::Two || count(rolled, |value| value > FaceValue::Four) >= 2
             {
@@ -137,12 +136,8 @@ impl Game {
         }
     }
 
-    fn dice_left(&self, picked: &Dice) -> NumberOfDice {
-        NumberOfDice::Five - picked.len() as u8
-    }
-
     fn did_new_pick(&self, picked: &Dice) -> bool {
-        self.dice_left > self.dice_left(picked)
+        self.dice_left > dice_left(picked)
     }
 
     pub fn score(&self) -> i8 {
@@ -183,6 +178,9 @@ fn can_win(picked_dice: &Dice) -> bool {
     })
 }
 
+fn dice_left(picked: &Dice) -> NumberOfDice {
+    NumberOfDice::Five - picked.len() as u8
+}
 fn has_fish(dice: &Dice) -> bool {
     !(has_four(dice) && has_two(dice))
 }

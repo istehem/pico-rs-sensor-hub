@@ -33,18 +33,25 @@ impl Dice {
         Dice { dice }
     }
 
-    pub fn pick<F>(&self, decide: F, max_hits: Option<usize>) -> Self
+    pub fn pick<F>(&mut self, decide: F, max_hits: Option<usize>) -> Self
     where
         F: Fn(FaceValue) -> bool,
     {
         let max_hits = max_hits.unwrap_or(self.dice.len());
-        self.dice
-            .iter()
-            .filter(|&die| decide(die.value))
-            .take(max_hits)
-            .cloned()
-            .collect::<Vec<_>>()
-            .into()
+
+        let mut pick_counter = 0;
+        let mut keep = Vec::new();
+        let mut picked = Vec::new();
+        for die in self.dice.iter() {
+            if decide(die.value) && pick_counter < max_hits {
+                picked.push(*die);
+                pick_counter += 1;
+            } else {
+                keep.push(*die);
+            }
+        }
+        self.dice = keep;
+        picked.into()
     }
 
     pub fn max(&self) -> Option<Die> {
