@@ -88,33 +88,24 @@ impl Game {
             return;
         }
         let face_value = || self.small_rng.random();
-        let dice = Dice::roll(face_value, self.dice_left.as_u8() as u32);
+        let rolled = Dice::roll(face_value, self.dice_left.as_u8() as u32);
 
         let mut picked = Dice::empty();
         picked.append(&mut self.picked);
 
         if !has_four(&picked) {
-            picked.append(&mut dice.pick(|value| value == FaceValue::Four, Some(1)));
+            picked.append(&mut rolled.pick(|value| value == FaceValue::Four, Some(1)));
         }
         if !has_two(&picked) {
-            picked.append(&mut dice.pick(|value| value == FaceValue::Two, Some(1)));
+            picked.append(&mut rolled.pick(|value| value == FaceValue::Two, Some(1)));
         }
         if !has_fish(&picked) {
-            let pick_over = if can_win(&picked) && (has_six(&dice) || self.did_new_pick(&picked)) {
-                FaceValue::Five
-            } else {
-                let dice_left = self.dice_left(&picked);
-                if dice_left < NumberOfDice::Three {
-                    FaceValue::Three
-                } else {
-                    FaceValue::Four
-                }
-            };
-            picked.append(&mut dice.pick(|value| value > pick_over, None));
+            let pick_gt = self.pick_gt_when_no_fish(&rolled, &picked);
+            picked.append(&mut rolled.pick(|value| value > pick_gt, None));
         }
         // at least one die needs to be picked
         if !self.did_new_pick(&picked) {
-            let pic = match dice.max() {
+            let pic = match rolled.max() {
                 Some(die) => die,
                 // there must be a max value since dice were rolled
                 None => unreachable!(),
@@ -122,10 +113,23 @@ impl Game {
             picked.push(pic);
         }
 
-        self.rolled = dice;
+        self.rolled = rolled;
         self.picked = picked;
 
         self.dice_left = NumberOfDice::Five - self.picked.len() as u8;
+    }
+
+    fn pick_gt_when_no_fish(&self, rolled: &Dice, picked: &Dice) -> FaceValue {
+        if can_win(picked) && (has_six(rolled) || self.did_new_pick(picked)) {
+            FaceValue::Five
+        } else {
+            let dice_left = self.dice_left(picked);
+            if dice_left < NumberOfDice::Three {
+                FaceValue::Three
+            } else {
+                FaceValue::Four
+            }
+        }
     }
 
     fn dice_left(&self, picked: &Dice) -> NumberOfDice {
