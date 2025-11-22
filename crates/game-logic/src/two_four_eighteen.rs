@@ -127,7 +127,12 @@ impl Game {
             if dice_left < NumberOfDice::Three {
                 FaceValue::Three
             } else {
-                FaceValue::Four
+                // TODO double check this logic for e.g. (4, 5, 5)
+                if count(rolled, |value| value > FaceValue::Four) > 1 {
+                    FaceValue::Three
+                } else {
+                    FaceValue::Four
+                }
             }
         }
     }
@@ -196,4 +201,11 @@ fn has_six(dice: &Dice) -> bool {
 
 fn has(dice: &[Die], face_value: FaceValue) -> bool {
     dice.iter().any(|&die| die.value == face_value)
+}
+
+fn count<F>(dice: &Dice, f: F) -> usize
+where
+    F: Fn(FaceValue) -> bool,
+{
+    dice.dice.iter().filter(|die| f(die.value)).count()
 }
