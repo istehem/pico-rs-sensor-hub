@@ -100,7 +100,7 @@ impl Game {
             picked.append(&mut dice.pick(|value| value == FaceValue::Two, Some(1)));
         }
         if !has_fish(&picked) {
-            let pick_over = if can_win(&picked) && has_six(&dice) || self.did_new_pick(&picked) {
+            let pick_over = if can_win(&picked) && (has_six(&dice) || self.did_new_pick(&picked)) {
                 FaceValue::Five
             } else {
                 let dice_left = self.dice_left(&picked);
@@ -133,7 +133,7 @@ impl Game {
     }
 
     fn did_new_pick(&self, picked: &Dice) -> bool {
-        self.dice_left != (NumberOfDice::Five - picked.len() as u8)
+        self.dice_left > self.dice_left(picked)
     }
 
     pub fn score(&self) -> i8 {
