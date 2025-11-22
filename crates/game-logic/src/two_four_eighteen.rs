@@ -124,15 +124,15 @@ impl Game {
             FaceValue::Five
         } else {
             let dice_left = self.dice_left(picked);
-            if dice_left < NumberOfDice::Three {
+            // TODO double check this logic for e.g. (4, 5, 5)
+            if dice_left <= NumberOfDice::Two || count(rolled, |value| value > FaceValue::Four) >= 2
+            {
+                // The expection value for rolling a die is 3.5.
                 FaceValue::Three
             } else {
-                // TODO double check this logic for e.g. (4, 5, 5)
-                if count(rolled, |value| value > FaceValue::Four) > 1 {
-                    FaceValue::Three
-                } else {
-                    FaceValue::Four
-                }
+                // The expection value for rolling a die with the option to re-roll it is 4.25.
+                // 4.25 = (4 + 5 + 6) / 3 * 1/2 + 3.5 * 1/2
+                FaceValue::Four
             }
         }
     }
