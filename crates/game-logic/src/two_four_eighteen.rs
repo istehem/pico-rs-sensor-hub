@@ -89,6 +89,7 @@ impl Game {
         }
         let face_value = || self.small_rng.random();
         let mut rolled = Dice::roll(face_value, self.dice_left.as_u8() as u32);
+        let initially_rolled = Dice::from(rolled.dice.clone());
 
         let mut picked = Dice::empty();
         picked.append(&mut self.picked);
@@ -113,9 +114,9 @@ impl Game {
             picked.push(pic);
         }
 
-        self.rolled = rolled;
         self.dice_left = dice_left(&picked);
         self.picked = picked;
+        self.rolled = initially_rolled;
     }
 
     fn pick_gt_when_no_fish(&self, rolled: &Dice, picked: &Dice) -> FaceValue {
