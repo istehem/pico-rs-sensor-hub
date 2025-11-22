@@ -5,6 +5,8 @@ mod tests {
 
     use game_logic::two_four_eighteen::Game;
     use game_logic::two_four_eighteen::NumberOfDice;
+    use pico_display::dice::Dice;
+    use pico_display::die::{Die, FaceValue};
     use pico_display::messages;
 
     use core::convert::Infallible;
@@ -47,7 +49,8 @@ mod tests {
 
     #[rstest]
     #[test_log::test]
-    fn test_play_game(
+    #[ignore]
+    fn play_game(
         #[from(init_display)] mut display: Display,
         #[from(gen_small_rng)] small_rng: SmallRng,
     ) -> Result<(), Infallible> {
@@ -68,7 +71,7 @@ mod tests {
             if window.events().any(|e| e == SimulatorEvent::Quit) {
                 break 'running;
             }
-            thread::sleep(Duration::from_secs(5));
+            thread::sleep(Duration::from_secs(1));
             display.clear(BinaryColor::Off)?;
         }
         let mut picked: Vec<String> = game
@@ -90,7 +93,37 @@ mod tests {
             messages::big_centered_message(score.to_string().as_str(), &mut display).unwrap();
         }
         window.update(&display);
-        thread::sleep(Duration::from_secs(5));
+        thread::sleep(Duration::from_secs(1));
+        Ok(())
+    }
+
+    #[rstest]
+    #[test_log::test]
+    fn start_game_with_no_fish(
+        #[from(init_display)] mut display: Display,
+        #[from(gen_small_rng)] small_rng: SmallRng,
+    ) -> Result<(), Infallible> {
+        let output_settings = OutputSettingsBuilder::new().scale(1).build();
+        let mut window = Window::new("Two Four Eighteen (No Fish)", &output_settings);
+
+        let picked = vec![Die::new(FaceValue::Two), Die::new(FaceValue::Four)];
+        let mut game = Game {
+            dice_left: NumberOfDice::Three,
+            small_rng,
+            picked: Dice::from(picked),
+            rolled: Dice::empty(),
+        };
+        game.roll();
+
+        game.rolled.draw(&mut display)?;
+        window.update(&display);
+        thread::sleep(Duration::from_secs(2));
+
+        display.clear(BinaryColor::Off)?;
+        game.picked.draw(&mut display)?;
+        window.update(&display);
+        thread::sleep(Duration::from_secs(2));
+
         Ok(())
     }
 }

@@ -46,7 +46,7 @@ mod tests {
     #[rstest]
     #[test_log::test]
     #[ignore]
-    fn test_roll_die(
+    fn roll_die(
         #[from(init_display)] mut display: Display,
         #[from(gen_small_rng)] small_rng: SmallRng,
     ) -> Result<(), Infallible> {
@@ -59,7 +59,7 @@ mod tests {
     #[rstest]
     #[test_log::test]
     #[ignore]
-    fn test_roll_two_dice(
+    fn roll_two_dice(
         #[from(init_display)] mut display: Display,
         #[from(gen_small_rng)] small_rng: SmallRng,
     ) -> Result<(), Infallible> {
@@ -72,7 +72,7 @@ mod tests {
     #[rstest]
     #[test_log::test]
     #[ignore]
-    fn test_roll_three_dice(
+    fn roll_three_dice(
         #[from(init_display)] mut display: Display,
         #[from(gen_small_rng)] small_rng: SmallRng,
     ) -> Result<(), Infallible> {
@@ -85,7 +85,7 @@ mod tests {
     #[rstest]
     #[test_log::test]
     #[ignore]
-    fn test_roll_four_dice(
+    fn roll_four_dice(
         #[from(init_display)] mut display: Display,
         #[from(gen_small_rng)] small_rng: SmallRng,
     ) -> Result<(), Infallible> {
@@ -98,7 +98,7 @@ mod tests {
     #[rstest]
     #[test_log::test]
     #[ignore]
-    fn test_roll_five_dice(
+    fn roll_five_dice(
         #[from(init_display)] mut display: Display,
         #[from(gen_small_rng)] small_rng: SmallRng,
     ) -> Result<(), Infallible> {
@@ -110,7 +110,7 @@ mod tests {
 
     #[rstest]
     #[test_log::test]
-    fn test_roll_one_to_five_number_of_dice(
+    fn roll_one_to_five_number_of_dice(
         #[from(init_display)] mut display: Display,
         #[from(gen_small_rng)] small_rng: SmallRng,
     ) -> Result<(), Infallible> {

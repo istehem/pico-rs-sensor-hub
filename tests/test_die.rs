@@ -33,7 +33,7 @@ mod tests {
 
     #[rstest]
     #[test_log::test]
-    fn test_draw_face_one(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
+    fn draw_face_one(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
 
         let mut die = Die::new(FaceValue::One);
@@ -43,7 +43,7 @@ mod tests {
 
     #[rstest]
     #[test_log::test]
-    fn test_draw_face_two(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
+    fn draw_face_two(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
 
         let mut die = Die::new(FaceValue::Two);
@@ -53,7 +53,7 @@ mod tests {
 
     #[rstest]
     #[test_log::test]
-    fn test_draw_face_three(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
+    fn draw_face_three(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
 
         let mut die = Die::new(FaceValue::Three);
@@ -63,7 +63,7 @@ mod tests {
 
     #[rstest]
     #[test_log::test]
-    fn test_draw_face_four(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
+    fn draw_face_four(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
 
         let mut die = Die::new(FaceValue::Four);
@@ -73,7 +73,7 @@ mod tests {
 
     #[rstest]
     #[test_log::test]
-    fn test_draw_face_five(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
+    fn draw_face_five(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
 
         let mut die = Die::new(FaceValue::Five);
@@ -83,7 +83,7 @@ mod tests {
 
     #[rstest]
     #[test_log::test]
-    fn test_draw_face_six(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
+    fn draw_face_six(#[from(init_display)] mut display: Display) -> Result<(), Infallible> {
         let _guard = TEST_MUTEX.lock().unwrap();
 
         let mut die = Die::new(FaceValue::Six);
