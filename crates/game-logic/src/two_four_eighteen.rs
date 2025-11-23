@@ -101,8 +101,8 @@ impl Game {
             picked.append(&mut rolled.pick(|value| value == FaceValue::Two, Some(1)));
         }
         if !has_fish(&picked) {
-            let pick_gt = self.pick_gt_when_no_fish(&rolled, &picked);
-            picked.append(&mut rolled.pick(|value| value > pick_gt, None));
+            let pick_gte = self.pick_gte_when_no_fish(&rolled, &picked);
+            picked.append(&mut rolled.pick(|value| value >= pick_gte, None));
         }
         // at least one die needs to be picked
         if !self.did_new_pick(&picked) {
@@ -119,9 +119,9 @@ impl Game {
         self.rolled = initially_rolled;
     }
 
-    fn pick_gt_when_no_fish(&self, rolled: &Dice, picked: &Dice) -> FaceValue {
+    fn pick_gte_when_no_fish(&self, rolled: &Dice, picked: &Dice) -> FaceValue {
         if can_win(picked) && (has_six(rolled) || self.did_new_pick(picked)) {
-            FaceValue::Five
+            FaceValue::Six
         } else {
             let dice_left = dice_left(picked);
             if dice_left <= NumberOfDice::Two
@@ -129,11 +129,11 @@ impl Game {
                 || count(rolled, |value| value > FaceValue::Three) >= 3
             {
                 // The expection value for rolling a die is 3.5.
-                FaceValue::Three
+                FaceValue::Four
             } else {
                 // The expection value for rolling a die with the option to re-roll it is 4.25.
                 // 4.25 = (4 + 5 + 6) / 3 * 1/2 + 3.5 * 1/2
-                FaceValue::Four
+                FaceValue::Five
             }
         }
     }
