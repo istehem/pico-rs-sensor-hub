@@ -26,6 +26,7 @@ mod tests {
     const SCALE: u32 = 5;
     const SCREEN_WIDTH: u32 = SCALE * 128;
     const SCREEN_HEIGHT: u32 = SCALE * 64;
+    const SLEEP_FOR: Duration = Duration::from_secs(2);
 
     use lazy_static::lazy_static;
     use std::sync::Mutex;
@@ -49,7 +50,6 @@ mod tests {
 
     #[rstest]
     #[test_log::test]
-    #[ignore]
     fn play_game(
         #[from(init_display)] mut display: Display,
         #[from(gen_small_rng)] small_rng: SmallRng,
@@ -71,7 +71,7 @@ mod tests {
             if window.events().any(|e| e == SimulatorEvent::Quit) {
                 break 'running;
             }
-            thread::sleep(Duration::from_secs(1));
+            thread::sleep(SLEEP_FOR);
             display.clear(BinaryColor::Off)?;
         }
         let mut picked: Vec<String> = game
@@ -93,7 +93,7 @@ mod tests {
             messages::big_centered_message(score.to_string().as_str(), &mut display).unwrap();
         }
         window.update(&display);
-        thread::sleep(Duration::from_secs(1));
+        thread::sleep(SLEEP_FOR);
         Ok(())
     }
 
@@ -103,6 +103,8 @@ mod tests {
         #[from(init_display)] mut display: Display,
         #[from(gen_small_rng)] small_rng: SmallRng,
     ) -> Result<(), Infallible> {
+        let _guard = TEST_MUTEX.lock().unwrap();
+
         let output_settings = OutputSettingsBuilder::new().scale(1).build();
         let mut window = Window::new("Two Four Eighteen (No Fish)", &output_settings);
 
@@ -117,12 +119,12 @@ mod tests {
 
         game.rolled.draw(&mut display)?;
         window.update(&display);
-        thread::sleep(Duration::from_secs(2));
+        thread::sleep(SLEEP_FOR);
 
         display.clear(BinaryColor::Off)?;
         game.picked.draw(&mut display)?;
         window.update(&display);
-        thread::sleep(Duration::from_secs(2));
+        thread::sleep(SLEEP_FOR);
 
         Ok(())
     }
