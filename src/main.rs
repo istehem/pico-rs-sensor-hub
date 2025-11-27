@@ -67,7 +67,8 @@ async fn main(spawner: Spawner) {
         let Pio {
             mut common, sm0, ..
         } = Pio::new(pio, Irqs);
-        let pin = common.make_pio_pin(p.PIN_17);
+        let mut pin = common.make_pio_pin(p.PIN_17);
+        pin.set_pull(Pull::Up);
 
         temperature_and_humidity::tasks::spawn_tasks(&spawner, pin, common, sm0).await;
     }
